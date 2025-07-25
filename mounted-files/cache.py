@@ -18,7 +18,6 @@ def ttl_lru_cache(seconds_to_live: int, maxsize: int = 128):
     """
 
     def wrapper(func):
-
         @lru_cache(maxsize)
         def inner(__ttl, *args, **kwargs):
             # Note that __ttl is not passed down to func,

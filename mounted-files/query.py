@@ -177,7 +177,7 @@ def _query_total_costs(from_date, to_date, add_attributable_costs_filter):
     processed_response = [
         {
             "date": e["TimePeriod"]["Start"],
-            "cost": f'{float(e["Total"]["UnblendedCost"]["Amount"]):.2f}',
+            "cost": f"{float(e['Total']['UnblendedCost']['Amount']):.2f}",
             "name": name,
         }
         for e in response["ResultsByTime"]
@@ -259,7 +259,7 @@ def query_total_costs_per_hub(from_date, to_date):
             [
                 {
                     "date": e["TimePeriod"]["Start"],
-                    "cost": f'{float(g["Metrics"]["UnblendedCost"]["Amount"]):.2f}',
+                    "cost": f"{float(g['Metrics']['UnblendedCost']['Amount']):.2f}",
                     "name": g["Keys"][0].split("$", maxsplit=1)[1] or "shared",
                 }
                 for g in e["Groups"]
