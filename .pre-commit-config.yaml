@@ -1,0 +1,27 @@
+repos:
+- repo: https://github.com/pycqa/isort
+  rev: 6.0.1
+  hooks:
+  - id: isort
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.4.1
+  hooks:
+  - id: codespell
+    args:
+    - --write-changes
+    additional_dependencies:
+    - tomli
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.12.5
+  hooks:
+    - id: ruff-check
+      args: [ --fix ]
+    - id: ruff-format
+- repo: https://github.com/yuvipanda/ruamelfmt
+  rev: v1.0.0
+  hooks:
+  - id: ruamelfmt
+    exclude: helm-charts/.*|config/clusters/templates/.*
+
+ci:
+  autoupdate_schedule: monthly
