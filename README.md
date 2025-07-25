@@ -18,7 +18,7 @@ Contributions to the `jupyterhub-cost-monitoring` project are welcome! Please fo
 2. Create a feature branch.
 3. Submit a pull request.
 
-For details on how to set up a local development environment, please refer to [`CONTRIUBUTING.md`](CONTRIBUTING.md)).
+Please refer to [`CONTRIUBUTING.md`](CONTRIBUTING.md) for more details.
 
 ## License
 
