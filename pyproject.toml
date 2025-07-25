@@ -1,7 +1,15 @@
 [project]
 name = "jupyterhub-cost-monitoring"
 version = "0.1.0"
-description = "Add your description here"
+description = "This tool provides a per-user cost reporting system for JupyterHubs running on AWS, enabling hub administrators to monitor costs associated with each user. This approach delivers cloud observability and cost transparency that can be reliably deployed using Kubernetes and integrated with Zero to JupyterHub distributions."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "boto3>=1.39.12",
+    "flask>=3.1.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.5",
+]
