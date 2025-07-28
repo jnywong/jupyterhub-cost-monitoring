@@ -10,6 +10,30 @@ This tool provides a per-user cost reporting system for JupyterHubs running on A
 2. Cost Estimation – Usage is correlated with AWS cost data to estimate per-user costs.
 3. Visualization – Grafana dashboards display rich, interactive views of usage and cost data, making it easy to monitor trends, identify high-cost workloads, and generate reports for funders and decision-makers.
 
+## Installation
+
+This project is designed to be compatible with Zero to JupyterHub distributions, making it easy to deploy in the cloud with Kubernetes.
+
+Add this project as a subchart of the z2jh `Chart.yaml` file with
+
+```yaml
+dependencies:
+  - name: jupyterhub-cost-monitoring
+    version: "<version-number>"
+    repository: "https://2i2c.org/jupyterhub-cost-monitoring/"
+    condition: jupyterhub-cost-monitoring.enabled
+```
+
+In the values file, enable the cost monitoring chart for your Kubernetes cluster:
+
+```yaml
+jupyterhub-cost-monitoring:
+  enabled: true
+  extraEnv:
+    - name: CLUSTER_NAME
+      value: "<name-of-cluster>"
+```
+
 ## Contributing
 
 Contributions to the `jupyterhub-cost-monitoring` project are welcome! Please follow the standard GitHub workflow:

@@ -54,3 +54,7 @@ pre-commit install
 ```
 
 This will set up the hooks defined in `.pre-commit-config.yaml` to run automatically on `git commit`.
+
+## Chartpress
+
+Helm charts are automatically published with [Chartpress](https://github.com/jupyterhub/chartpress) and hosted at [2i2c.org/jupyterhub-cost-monitoring](https://2i2c.org/jupyterhub-cost-monitoring/). Images are hosted at [Quay.io](https://quay.io/repository/2i2c/jupyterhub-cost-monitoring).
