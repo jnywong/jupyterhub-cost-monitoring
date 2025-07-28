@@ -73,9 +73,10 @@ def index():
         </ul>
     ''', links=links)
 
+
 @app.route("/health/ready")
 def ready():
-    return ("", 204)
+    return ("200: OK", 200)
 
 
 @app.route("/hub-names")
