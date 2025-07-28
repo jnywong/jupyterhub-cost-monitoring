@@ -2,13 +2,13 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ include "aws-ce-grafana-backend.webserver.fullname" . }}
+  name: {{ include "jupyterhub-cost-monitoring.webserver.fullname" . }}
   labels:
-    {{- include "aws-ce-grafana-backend.labels" . | nindent 4 }}
+    {{- include "jupyterhub-cost-monitoring.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      {{- include "aws-ce-grafana-backend.selectorLabels" . | nindent 6 }}
+      {{- include "jupyterhub-cost-monitoring.selectorLabels" . | nindent 6 }}
   policyTypes:
     # Only constrain ingress for simplicy, allow any egress
     - Ingress

@@ -17,7 +17,7 @@
     Renders to a prefix for the chart's resource names. This prefix is assumed to
     make the resource name cluster unique.
 */}}
-{{- define "aws-ce-grafana-backend.fullname" -}}
+{{- define "jupyterhub-cost-monitoring.fullname" -}}
     {{- /*
         We have implemented a trick to allow a parent chart depending on this
         chart to call these named templates.
@@ -34,7 +34,7 @@
     */}}
     {{- $fullname_override := .Values.fullnameOverride }}
     {{- $name_override := .Values.nameOverride }}
-    {{- if ne .Chart.Name "aws-ce-grafana-backend" }}
+    {{- if ne .Chart.Name "jupyterhub-cost-monitoring" }}
         {{- if .Values.jupyterhub }}
             {{- $fullname_override = .Values.jupyterhub.fullnameOverride }}
             {{- $name_override = .Values.jupyterhub.nameOverride }}
@@ -57,9 +57,9 @@
     Renders to a blank string or if the fullname template is truthy renders to it
     with an appended dash.
 */}}
-{{- define "aws-ce-grafana-backend.fullname.dash" -}}
-    {{- if (include "aws-ce-grafana-backend.fullname" .) }}
-        {{- include "aws-ce-grafana-backend.fullname" . }}-
+{{- define "jupyterhub-cost-monitoring.fullname.dash" -}}
+    {{- if (include "jupyterhub-cost-monitoring.fullname" .) }}
+        {{- include "jupyterhub-cost-monitoring.fullname" . }}-
     {{- end }}
 {{- end }}
 
@@ -70,29 +70,29 @@
 */}}
 
 {{- /* webserver resources' default name */}}
-{{- define "aws-ce-grafana-backend.webserver.fullname" -}}
-    {{- if (include "aws-ce-grafana-backend.fullname" .) }}
-        {{- include "aws-ce-grafana-backend.fullname" . }}
+{{- define "jupyterhub-cost-monitoring.webserver.fullname" -}}
+    {{- if (include "jupyterhub-cost-monitoring.fullname" .) }}
+        {{- include "jupyterhub-cost-monitoring.fullname" . }}
     {{- else -}}
-        aws-ce-grafana-backend
+        jupyterhub-cost-monitoring
     {{- end }}
 {{- end }}
 
 {{- /* webserver's ServiceAccount name */}}
-{{- define "aws-ce-grafana-backend.webserver.serviceaccount.fullname" -}}
+{{- define "jupyterhub-cost-monitoring.webserver.serviceaccount.fullname" -}}
     {{- if .Values.serviceAccount.create }}
-        {{- .Values.serviceAccount.name | default (include "aws-ce-grafana-backend.webserver.fullname" .) }}
+        {{- .Values.serviceAccount.name | default (include "jupyterhub-cost-monitoring.webserver.fullname" .) }}
     {{- else }}
         {{- .Values.serviceAccount.name }}
     {{- end }}
 {{- end }}
 
 {{- /* webserver's Ingress name */}}
-{{- define "aws-ce-grafana-backend.webserver.ingress.fullname" -}}
-    {{- if (include "aws-ce-grafana-backend.fullname" .) }}
-        {{- include "aws-ce-grafana-backend.fullname" . }}
+{{- define "jupyterhub-cost-monitoring.webserver.ingress.fullname" -}}
+    {{- if (include "jupyterhub-cost-monitoring.fullname" .) }}
+        {{- include "jupyterhub-cost-monitoring.fullname" . }}
     {{- else -}}
-        aws-ce-grafana-backend
+        jupyterhub-cost-monitoring
     {{- end }}
 {{- end }}
 

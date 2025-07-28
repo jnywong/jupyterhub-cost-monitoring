@@ -1,5 +1,5 @@
 {{- /*
-  aws-ce-grafana-backend.chart-version-to-git-ref:
+  jupyterhub-cost-monitoring.chart-version-to-git-ref:
     Renders a valid git reference from a chartpress generated version string.
     In practice, either a git tag or a git commit hash will be returned.
 
@@ -13,6 +13,6 @@
     - The regular expression is in golang syntax, but \d had to become \\d for
       example.
 */}}
-{{- define "aws-ce-grafana-backend.chart-version-to-git-ref" -}}
+{{- define "jupyterhub-cost-monitoring.chart-version-to-git-ref" -}}
 {{- regexReplaceAll ".*\\.git\\.\\d+\\.h(.*)" . "${1}" }}
 {{- end }}

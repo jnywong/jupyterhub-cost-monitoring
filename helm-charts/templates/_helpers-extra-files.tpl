@@ -1,28 +1,28 @@
 {{- /*
-  aws-ce-grafana-backend.extraFiles.data:
+  jupyterhub-cost-monitoring.extraFiles.data:
     Renders content for a k8s Secret's data field, coming from extraFiles with
     binaryData entries.
 */}}
-{{- define "aws-ce-grafana-backend.extraFiles.data.withNewLineSuffix" -}}
+{{- define "jupyterhub-cost-monitoring.extraFiles.data.withNewLineSuffix" -}}
     {{- range $file_key, $file_details := . }}
-        {{- include "aws-ce-grafana-backend.extraFiles.validate-file" (list $file_key $file_details) }}
+        {{- include "jupyterhub-cost-monitoring.extraFiles.validate-file" (list $file_key $file_details) }}
         {{- if $file_details.binaryData }}
             {{- $file_key | quote }}: {{ $file_details.binaryData | nospace | quote }}{{ println }}
         {{- end }}
     {{- end }}
 {{- end }}
-{{- define "aws-ce-grafana-backend.extraFiles.data" -}}
-    {{- include "aws-ce-grafana-backend.extraFiles.data.withNewLineSuffix" . | trimSuffix "\n" }}
+{{- define "jupyterhub-cost-monitoring.extraFiles.data" -}}
+    {{- include "jupyterhub-cost-monitoring.extraFiles.data.withNewLineSuffix" . | trimSuffix "\n" }}
 {{- end }}
 
 {{- /*
-  aws-ce-grafana-backend.extraFiles.stringData:
+  jupyterhub-cost-monitoring.extraFiles.stringData:
     Renders content for a k8s Secret's stringData field, coming from extraFiles
     with either data or stringData entries.
 */}}
-{{- define "aws-ce-grafana-backend.extraFiles.stringData.withNewLineSuffix" -}}
+{{- define "jupyterhub-cost-monitoring.extraFiles.stringData.withNewLineSuffix" -}}
     {{- range $file_key, $file_details := . }}
-        {{- include "aws-ce-grafana-backend.extraFiles.validate-file" (list $file_key $file_details) }}
+        {{- include "jupyterhub-cost-monitoring.extraFiles.validate-file" (list $file_key $file_details) }}
         {{- $file_name := $file_details.mountPath | base }}
         {{- if $file_details.stringData }}
             {{- $file_key | quote }}: |
@@ -42,11 +42,11 @@
         {{- end }}
     {{- end }}
 {{- end }}
-{{- define "aws-ce-grafana-backend.extraFiles.stringData" -}}
-    {{- include "aws-ce-grafana-backend.extraFiles.stringData.withNewLineSuffix" . | trimSuffix "\n" }}
+{{- define "jupyterhub-cost-monitoring.extraFiles.stringData" -}}
+    {{- include "jupyterhub-cost-monitoring.extraFiles.stringData.withNewLineSuffix" . | trimSuffix "\n" }}
 {{- end }}
 
-{{- define "aws-ce-grafana-backend.extraFiles.validate-file" -}}
+{{- define "jupyterhub-cost-monitoring.extraFiles.validate-file" -}}
     {{- $file_key := index . 0 }}
     {{- $file_details := index . 1 }}
 

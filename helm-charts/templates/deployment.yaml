@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aws-ce-grafana-backend.webserver.fullname" . }}
+  name: {{ include "jupyterhub-cost-monitoring.webserver.fullname" . }}
   labels:
-    {{- include "aws-ce-grafana-backend.labels" . | nindent 4 }}
+    {{- include "jupyterhub-cost-monitoring.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "aws-ce-grafana-backend.selectorLabels" . | nindent 6 }}
+      {{- include "jupyterhub-cost-monitoring.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -18,12 +18,12 @@ spec:
         {{- . | toYaml | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "aws-ce-grafana-backend.labels" . | nindent 8 }}
+        {{- include "jupyterhub-cost-monitoring.labels" . | nindent 8 }}
     spec:
       volumes:
         - name: secret
           secret:
-            secretName: {{ include "aws-ce-grafana-backend.webserver.fullname" . }}
+            secretName: {{ include "jupyterhub-cost-monitoring.webserver.fullname" . }}
       containers:
         - name: webserver
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -35,7 +35,7 @@ spec:
               containerPort: 8080
           volumeMounts:
             - name: secret
-              mountPath: /srv/aws-ce-grafana-backend
+              mountPath: /srv/jupyterhub-cost-monitoring
               readOnly: true
           env:
             - name: PYTHONUNBUFFERED
@@ -57,7 +57,7 @@ spec:
       imagePullSecrets:
         {{- . | toYaml | nindent 8 }}
       {{- end }}
-      {{- with include "aws-ce-grafana-backend.webserver.serviceaccount.fullname" . }}
+      {{- with include "jupyterhub-cost-monitoring.webserver.serviceaccount.fullname" . }}
       serviceAccountName: {{ . }}
       {{- end }}
       {{- with .Values.podSecurityContext }}

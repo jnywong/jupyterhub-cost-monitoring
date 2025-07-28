@@ -33,7 +33,7 @@ properties:
   enabled:
     type: boolean
     description: |
-      Configuration flag for charts depending on aws-ce-grafana-backend to toggle installing it.
+      Configuration flag for charts depending on jupyterhub-cost-monitoring to toggle installing it.
 
   # General configuration
   # ---------------------------------------------------------------------------
