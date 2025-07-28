@@ -25,8 +25,8 @@ envBasedConfig:
 replicas: 1
 extraEnv: []
 image:
-  repository: quay.io/2i2c/aws-ce-grafana-backend
-  tag: "0.0.1-0.dev.git.10263.hc87b65cf"
+  repository: quay.io/2i2c/jupyterhub-cost-monitoring
+  tag: "set-by-chartpress"
   pullPolicy: ""
   pullSecrets: []
 resources: {}
