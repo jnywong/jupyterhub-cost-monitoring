@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from flask import Flask, request, url_for, render_template_string
 
-from .query import (
+from .query_cost_aws import (
     query_hub_names,
     query_total_costs,
     query_total_costs_per_component,
