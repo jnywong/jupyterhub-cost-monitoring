@@ -50,7 +50,7 @@ def query_aws_cost_explorer(metrics, granularity, from_date, to_date, filter, gr
     if response.get("NextPageToken"):
         raise ValueError(
             f"A query with from '{from_date}' and to '{to_date}' led to "
-            "aws-ce-grafana-backend needing to handle a paginated response "
+            "jupyterhub-cost-monitoring needing to handle a paginated response "
             "and that hasn't been worked yet, it needs to be fixed."
         )
 
