@@ -11,5 +11,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "mystmd>=1.6.0",
     "ruff>=0.12.5",
 ]
