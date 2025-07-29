@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "jupyterhub-cost-monitoring.webserver.fullname" . }}
+  name: {{ include "jupyterhub-cost-monitoring.resourceName" . }}-deployment
   labels:
     {{- include "jupyterhub-cost-monitoring.labels" . | nindent 4 }}
 spec:
@@ -12,7 +12,6 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/mounted-secret: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum }}
         checksum/service-account: {{ include (print .Template.BasePath "/serviceaccount.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- . | toYaml | nindent 8 }}
