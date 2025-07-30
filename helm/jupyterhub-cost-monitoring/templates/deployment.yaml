@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "jupyterhub-cost-monitoring.resourceName" . }}-deployment
+  name: {{ include "jupyterhub-cost-monitoring.webserver.fullname" . }}-deployment
   labels:
     {{- include "jupyterhub-cost-monitoring.labels" . | nindent 4 }}
 spec:
