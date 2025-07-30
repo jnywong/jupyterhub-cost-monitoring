@@ -1,18 +1,55 @@
-{{- /*
-  jupyterhub-cost-monitoring.chart-version-to-git-ref:
-    Renders a valid git reference from a chartpress generated version string.
-    In practice, either a git tag or a git commit hash will be returned.
-
-    - The version string will follow a chartpress pattern,
-      like "0.1.0-0.dev.git.17.h8368bc0", see
-      https://github.com/jupyterhub/chartpress#examples-chart-versions-and-image-tags.
-
-    - The regexReplaceAll function is a sprig library function, see
-      https://masterminds.github.io/sprig/strings.html.
-
-    - The regular expression is in golang syntax, but \d had to become \\d for
-      example.
+{{/*
+Expand the name of the chart.
 */}}
-{{- define "jupyterhub-cost-monitoring.chart-version-to-git-ref" -}}
-{{- regexReplaceAll ".*\\.git\\.\\d+\\.h(.*)" . "${1}" }}
+{{- define "jupyterhub-cost-monitoring.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create a default fully qualified app name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+If release name contains chart name it will be used as a full name.
+*/}}
+{{- define "jupyterhub-cost-monitoring.fullname" -}}
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "jupyterhub-cost-monitoring.resourceName" -}}
+{{- include "jupyterhub-cost-monitoring.name" . -}}
+{{- end }}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "jupyterhub-cost-monitoring.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Common labels
+*/}}
+{{- define "jupyterhub-cost-monitoring.labels" -}}
+helm.sh/chart: {{ include "jupyterhub-cost-monitoring.chart" . }}
+{{ include "jupyterhub-cost-monitoring.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "jupyterhub-cost-monitoring.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "jupyterhub-cost-monitoring.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
