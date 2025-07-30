@@ -19,10 +19,6 @@ spec:
       labels:
         {{- include "jupyterhub-cost-monitoring.labels" . | nindent 8 }}
     spec:
-      volumes:
-        - name: secret
-          secret:
-            secretName: {{ include "jupyterhub-cost-monitoring.webserver.fullname" . }}
       containers:
         - name: webserver
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
