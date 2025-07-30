@@ -16,16 +16,16 @@ type: object
 additionalProperties: false
 required:
   # General configuration
-  - global
-  # Software configuration
-  - envBasedConfig
+- global
+  # Cluster name configuration
+- extraEnv
   # Deployment resource
-  - image
+- image
   # Other resources
-  - serviceAccount
-  - service
-  - ingress
-  - networkPolicy
+- serviceAccount
+- service
+- ingress
+- networkPolicy
 properties:
   # Flag to conditionally install the chart
   # ---------------------------------------------------------------------------
@@ -39,23 +39,12 @@ properties:
   # ---------------------------------------------------------------------------
   #
   nameOverride:
-    type: [string, "null"]
+    type: [string, 'null']
   fullnameOverride:
-    type: [string, "null"]
+    type: [string, 'null']
   global:
     type: object
     additionalProperties: true
-
-  # Software configuration
-  # ---------------------------------------------------------------------------
-  #
-  envBasedConfig:
-    type: object
-    additionalProperties: false
-    required: [clusterName]
-    properties:
-      clusterName:
-        type: string
 
   # Deployment resource
   # ---------------------------------------------------------------------------
@@ -64,7 +53,7 @@ properties:
     type: integer
   extraEnv:
     type: array
-  image: &image
+  image:
     type: object
     additionalProperties: false
     required: [repository, tag]
@@ -74,31 +63,31 @@ properties:
       tag:
         type: string
       pullPolicy:
-        enum: [null, "", IfNotPresent, Always, Never]
+        enum: [null, '', IfNotPresent, Always, Never]
       pullSecrets:
         type: array
-  resources: &resources
+  resources:
     type: object
     additionalProperties: true
-  securityContext: &securityContext
+  securityContext:
     type: object
     additionalProperties: true
-  podSecurityContext: &podSecurityContext
+  podSecurityContext:
     type: object
     additionalProperties: true
   podAnnotations: &labels-and-annotations
     type: object
     additionalProperties: false
     patternProperties:
-      ".*":
+      .*:
         type: string
-  nodeSelector: &nodeSelector
+  nodeSelector:
     type: object
     additionalProperties: true
-  affinity: &affinity
+  affinity:
     type: object
     additionalProperties: true
-  tolerations: &tolerations
+  tolerations:
     type: array
 
   # ServiceAccount resource
@@ -143,11 +132,11 @@ properties:
         type: boolean
       annotations: *labels-and-annotations
       ingressClassName:
-        type: [string, "null"]
+        type: [string, 'null']
       hosts:
         type: array
       pathSuffix:
-        type: [string, "null"]
+        type: [string, 'null']
       pathType:
         enum: [Prefix, Exact, ImplementationSpecific]
       tls:
@@ -168,7 +157,7 @@ properties:
         type: object
         additionalProperties: false
         required:
-          - localGrafanaInstances
+        - localGrafanaInstances
         properties:
           localGrafanaInstances:
             type: boolean
