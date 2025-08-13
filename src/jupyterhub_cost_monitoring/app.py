@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from flask import Flask, render_template_string, request, url_for
+from flask import Flask, render_template_string, request, url_for
 
 from .query_cost_aws import (
     query_hub_names,
@@ -9,15 +10,22 @@ from .query_cost_aws import (
     query_total_costs_per_component,
     query_total_costs_per_hub,
 )
-from .query_usage import query_usage
+from .query_usage import (
+    query_usage_compute_per_user,
+)
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
 def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
+def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
     """
     Parse "from" and "to" query parameters, expected to be passed as YYYY-MM-DD
+    api_providerted strings or including time as well.
+
+    Args:
+        api_provider (str): The api_provider, such as "prometheus" or "aws". Formats dates accordingly.
     api_providerted strings or including time as well.
 
     Args:
@@ -33,20 +41,28 @@ def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
     2024-07-27T15:50:18.231Z with a Z in the end, and that Grafana's
     `${__from:date}` variable is UTC based, but as soon as its adjusted with a
     custom api_provider, it no longer is UTC based. Due to that, we need to be able to
+    custom api_provider, it no longer is UTC based. Due to that, we need to be able to
     parse the full datetime string.
     """
     now_date = datetime.now(timezone.utc).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
+    now_date = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     if request.args.get("to"):
+        to_date = datetime.fromisoformat(request.args["to"])
         to_date = datetime.fromisoformat(request.args["to"])
     else:
         to_date = now_date
     if request.args.get("from"):
         from_date = datetime.fromisoformat(request.args["from"])
+        from_date = datetime.fromisoformat(request.args["from"])
     else:
         from_date = to_date - timedelta(days=30)
 
+    # api_provider to_dates are exclusive, so we add one day to include it
+    to_date = to_date + timedelta(days=1)
     # prevent "end date past the beginning of next month" errors
     if to_date > now_date:
         to_date = now_date
@@ -57,11 +73,10 @@ def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
     if api_provider == "prometheus":
         return from_date.isoformat(), to_date.isoformat()
     else:
-        # "aws" to_dates are exclusive, so we add one day to include it
-        to_date = to_date + timedelta(days=1)
         from_date = from_date.strftime("%Y-%m-%d")
         to_date = to_date.strftime("%Y-%m-%d")
         return from_date, to_date
+
 
 
 @app.route("/")
@@ -69,14 +84,21 @@ def index():
     """
     Index page that lists all available endpoints in the application.
     """
+    """
+    Index page that lists all available endpoints in the application.
+    """
     links = []
     for rule in app.url_map.iter_rules():
         # Skip static routes and those requiring parameters
         if rule.endpoint != "static" and len(rule.arguments) == 0:
+        if rule.endpoint != "static" and len(rule.arguments) == 0:
             url = url_for(rule.endpoint)
             links.append((rule.endpoint, url))
 
+
     # Render links using a simple HTML template
+    return render_template_string(
+        """
     return render_template_string(
         """
         <h1>Available Endpoints</h1>
@@ -88,10 +110,16 @@ def index():
     """,
         links=links,
     )
+    """,
+        links=links,
+    )
 
 
 @app.route("/health/ready")
 def ready():
+    """
+    Readiness probe endpoint.
+    """
     """
     Readiness probe endpoint.
     """
@@ -100,6 +128,10 @@ def ready():
 
 @app.route("/hub-names")
 def hub_names():
+    """
+    Endpoint to query hub names.
+    """
+    from_date, to_date = _parse_from_to_in_query_params(api_provider="aws")
     """
     Endpoint to query hub names.
     """
@@ -114,12 +146,20 @@ def total_costs():
     Endpoint to query total costs.
     """
     from_date, to_date = _parse_from_to_in_query_params(api_provider="aws")
+    """
+    Endpoint to query total costs.
+    """
+    from_date, to_date = _parse_from_to_in_query_params(api_provider="aws")
 
     return query_total_costs(from_date, to_date)
 
 
 @app.route("/total-costs-per-hub")
 def total_costs_per_hub():
+    """
+    Endpoint to query total costs per hub.
+    """
+    from_date, to_date = _parse_from_to_in_query_params(api_provider="aws")
     """
     Endpoint to query total costs per hub.
     """
@@ -135,21 +175,21 @@ def total_costs_per_component():
     """
     from_date, to_date = _parse_from_to_in_query_params(api_provider="aws")
     hub_name = request.args.get("hub")
-    component = request.args.get("component")
+    component_name = request.args.get("component")
+    user_name = request.args.get("user")
 
-    return query_total_costs_per_component(from_date, to_date, hub_name, component)
+    return query_total_costs_per_component(from_date, to_date, hub_name)
 
 
-@app.route("/total-usage")
-def total_usage():
+@app.route("/total-compute-per-user")
+def total_compute_per_user():
     """
-    Endpoint to query total usage.
+    Endpoint to query total costs per user.
     Expects 'from' and 'to' query parameters in the api_provider YYYY-MM-DD.
-    Optionally accepts 'hub', 'component' and 'user', query parameters.
+    Optionally accepts 'hub' and 'component' query parameters.
     """
     from_date, to_date = _parse_from_to_in_query_params(api_provider="prometheus")
     hub_name = request.args.get("hub")
     component_name = request.args.get("component")
-    user_name = request.args.get("user")
 
-    return query_usage(from_date, to_date, hub_name, component_name, user_name)
+    return query_usage_compute_per_user(from_date, to_date, hub_name, component_name)
