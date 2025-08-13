@@ -53,14 +53,14 @@ def query_usage_compute_per_user(
     else:
         for subcomponent, query in USAGE_MAP[f"{component_name}"].items():
             response = query_prometheus(query, from_date, to_date)
-            result.append(_process_response(response, component_name, subcomponent))
+            result.extend(_process_response(response, component_name, subcomponent))
 
     return result
 
 
 def _process_response(
     response: requests.Response, component_name: str, subcomponent_name: str
-) -> list[dict]:
+) -> dict:
     """
     Process the response from the Prometheus server to extract compute usage data.
     """
