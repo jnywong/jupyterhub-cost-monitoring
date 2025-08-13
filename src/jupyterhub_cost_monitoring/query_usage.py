@@ -9,7 +9,7 @@ from datetime import datetime
 import requests
 from yarl import URL
 
-from .const_usage import GRANULARITY, MEMORY_PER_USER
+from .const_usage import GRANULARITY, USAGE_MAP
 
 prometheus_url = os.environ.get(
     "PROMETHEUS_HOST", "http://localhost:9090"
@@ -46,15 +46,21 @@ def query_usage_compute_per_user(
         to_date: End date in string ISO format (YYYY-MM-DD).
         hub_name: Optional name of the hub to filter results.
     """
-    query = MEMORY_PER_USER
-    response = query_prometheus(query, from_date, to_date)
 
-    result = _process_response(response)
+    result = []
+    if component_name is None:
+        raise ValueError("FIX: loop over all component names.")
+    else:
+        for subcomponent, query in USAGE_MAP[f"{component_name}"].items():
+            response = query_prometheus(query, from_date, to_date)
+            result.append(_process_response(response, component_name, subcomponent))
 
     return result
 
 
-def _process_response(response: requests.Response) -> list[dict]:
+def _process_response(
+    response: requests.Response, component_name: str, subcomponent_name: str
+) -> list[dict]:
     """
     Process the response from the Prometheus server to extract compute usage data.
     """
@@ -71,6 +77,8 @@ def _process_response(response: requests.Response) -> list[dict]:
             {
                 "user": user,
                 "hub": hub,
+                "component": component_name,
+                "subcomponent": subcomponent_name,
                 "date": date,
                 "value": usage,
             }
@@ -92,6 +100,8 @@ def _pivot_response_dict(result: list[dict]) -> list[dict]:
                     "date": date,
                     "user": entry["user"],
                     "hub": entry["hub"],
+                    "component": entry["component"],
+                    "subcomponent": entry["subcomponent"],
                     "value": value,
                 }
             )
@@ -104,9 +114,22 @@ def _sum_by_date(result: list[dict]) -> list[dict]:
     """
     sums = defaultdict(float)
     for entry in result:
-        key = (entry["date"], entry["user"], entry["hub"])
+        key = (
+            entry["date"],
+            entry["user"],
+            entry["hub"],
+            entry["component"],
+            entry["subcomponent"],
+        )
         sums[key] += entry["value"]
     return [
-        {"date": date, "user": user, "hub": hub, "value": total}
-        for (date, user, hub), total in sums.items()
+        {
+            "date": date,
+            "user": user,
+            "hub": hub,
+            "component": component,
+            "subcomponent": subcomponent,
+            "value": total,
+        }
+        for (date, user, hub, component, subcomponent), total in sums.items()
     ]
