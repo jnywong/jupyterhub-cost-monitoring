@@ -8,7 +8,7 @@ import logging
 import boto3
 
 from .cache import ttl_lru_cache
-from .const import (
+from .const_cost_aws import (
     FILTER_ATTRIBUTABLE_COSTS,
     FILTER_USAGE_COSTS,
     GRANULARITY_DAILY,
