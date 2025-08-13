@@ -13,3 +13,24 @@ MEMORY_PER_USER = """
         ) by (pod, namespace, annotation_hub_jupyter_org_username)
     ) by (annotation_hub_jupyter_org_username, namespace)
 """
+
+CPU_PER_USER = """
+    sum(
+        irate(container_cpu_usage_seconds_total{name!="", pod=~"jupyter-.*"}[5m])
+        * on (namespace, pod) group_left(annotation_hub_jupyter_org_username)
+        group(
+            kube_pod_annotations{namespace=~".*", annotation_hub_jupyter_org_username=~".*"}
+        ) by (pod, namespace, annotation_hub_jupyter_org_username)
+    ) by (annotation_hub_jupyter_org_username, namespace)
+"""
+
+USAGE_MAP = {
+    "compute": {
+        "memory": MEMORY_PER_USER,
+        "cpu": CPU_PER_USER,
+    },
+    "home storage": "home_storage",
+    "networking": "networking",
+    "object storage": "object_storage",
+    "fixed": "fixed",
+}

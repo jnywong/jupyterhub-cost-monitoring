@@ -137,16 +137,17 @@ def total_costs_per_component():
     """
     from_date, to_date = _parse_from_to_in_query_params(api_provider="aws")
     hub_name = request.args.get("hub")
+    component = request.args.get("component")
 
-    return query_total_costs_per_component(from_date, to_date, hub_name)
+    return query_total_costs_per_component(from_date, to_date, hub_name, component)
 
 
-@app.route("/total-compute-per-user")
-def total_compute_per_user():
+@app.route("/total-usage")
+def total_usage():
     """
-    Endpoint to query total costs per user.
+    Endpoint to query total usage.
     Expects 'from' and 'to' query parameters in the api_provider YYYY-MM-DD.
-    Optionally accepts 'hub' and 'component' query parameters.
+    Optionally accepts 'hub', 'component' and 'username', query parameters.
     """
     from_date, to_date = _parse_from_to_in_query_params(api_provider="prometheus")
     hub_name = request.args.get("hub")
