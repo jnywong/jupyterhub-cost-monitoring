@@ -1,50 +1,69 @@
 """
-Query the Prometheus server to get the usage of JupyterHub resources.
+Query the Prometheus server to get usage of JupyterHub resources.
 """
 
-import argparse
+from datetime import datetime
 
 import requests
 from yarl import URL
 
+from .const_usage import COMPUTE_PER_USER, GRANULARITY
 
-def query_prometheus(prometheus_url: str, query: str):
+prometheus_url = "http://localhost:9090"  # TODO: replace server URL definition
+
+
+def query_prometheus(query: str, from_date: str, to_date: str):
     """
     Query the Prometheus server with the given query.
     """
     prometheus_api = URL(prometheus_url)
-    query_api = prometheus_api.with_path("/api/v1/query").with_query({"query": query})
-    response = requests.get(str(query_api))
+    parameters = {
+        "query": query,
+        "start": from_date,
+        "end": to_date,
+        "step": GRANULARITY,
+    }
+    query_api = URL(prometheus_api.with_path("/api/v1/query_range"))
+    print(f"Querying Prometheus API: {query_api}")
+    response = requests.get(query_api, params=parameters)
     response.raise_for_status()
 
-    result = response.json()["data"]["result"]
+    result = response.json()
 
     return result
 
 
-def main():
-    argparser = argparse.ArgumentParser(
-        description="Query JupyterHub usage from Prometheus."
-    )
-    argparser.add_argument(
-        "--prometheus_url",
-        default="http://localhost:9090",
-        type=str,
-        help="URL of the Prometheus server.",
-    )
-    argparser.add_argument(
-        "--query",
-        required=True,
-        type=str,
-        help="Prometheus query to execute.",
-    )
+def query_usage_compute_per_user(
+    from_date: str, to_date: str, hub_name: str | None, component_name: str | None
+):
+    """
+    Query compute usage per user from the Prometheus server.
+    Args:
+        from_date: Start date in string ISO format (YYYY-MM-DD).
+        to_date: End date in string ISO format (YYYY-MM-DD).
+        hub_name: Optional name of the hub to filter results.
+    """
+    query = COMPUTE_PER_USER
+    response = query_prometheus(query, from_date, to_date)
 
-    args = argparser.parse_args()
+    result = []
 
-    result = query_prometheus(args.prometheus_url, args.query)
+    for data in response["data"]["result"]:
+        user = data["metric"]["annotation_hub_jupyter_org_username"]
+        date = [
+            datetime.utcfromtimestamp(value[0]).strftime("%Y-%m-%d")
+            for value in data["values"]
+        ]
+        usage = [float(value[1]) for value in data["values"]]
+        hub = data["metric"]["namespace"]
 
-    print(f"Query Result:{result}")
+        result.append(
+            {
+                "user": user,
+                "hub": hub,
+                "date": date,
+                "value": usage,
+            }
+        )
 
-
-if __name__ == "__main__":
-    main()
+    return result
