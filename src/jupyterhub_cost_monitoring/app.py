@@ -185,10 +185,13 @@ def total_usage():
     """
     Endpoint to query total usage.
     Expects 'from' and 'to' query parameters in the api_provider YYYY-MM-DD.
-    Optionally accepts 'hub', 'component' and 'username', query parameters.
+    Optionally accepts 'hub', 'component' and 'user', query parameters.
     """
     from_date, to_date = _parse_from_to_in_query_params(api_provider="prometheus")
     hub_name = request.args.get("hub")
     component_name = request.args.get("component")
+    user_name = request.args.get("user")
 
-    return query_usage_compute_per_user(from_date, to_date, hub_name, component_name)
+    return query_usage_compute_per_user(
+        from_date, to_date, hub_name, component_name, user_name
+    )
