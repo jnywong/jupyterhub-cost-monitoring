@@ -29,8 +29,4 @@ USAGE_MAP = {
         "memory": MEMORY_PER_USER,
         "cpu": CPU_PER_USER,
     },
-    "home storage": "home_storage",
-    "networking": "networking",
-    "object storage": "object_storage",
-    "fixed": "fixed",
 }

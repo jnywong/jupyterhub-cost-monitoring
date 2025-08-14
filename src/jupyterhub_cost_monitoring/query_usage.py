@@ -48,13 +48,16 @@ def query_usage_compute_per_user(
         to_date: End date in string ISO format (YYYY-MM-DD).
         hub_name: Optional name of the hub to filter results.
         component_name: Optional name of the component to filter results.
-    """
 
+    Note: A subcomponent is a subset of a component, e.g. "compute" can have "cpu" and "memory" as subcomponents.
+    """
     result = []
     if component_name is None:
-        raise ValueError("FIX: loop over all component names.")
+        for usage in USAGE_MAP.keys():
+            for subcomponent, query in USAGE_MAP[usage].items():
+                response = query_prometheus(query, from_date, to_date)
+                result.extend(_process_response(response, usage, subcomponent))
     else:
-        # A subcomponent is a subset of a component, e.g. "compute" can have "cpu" and "memory" as subcomponents.
         for subcomponent, query in USAGE_MAP[f"{component_name}"].items():
             response = query_prometheus(query, from_date, to_date)
             result.extend(_process_response(response, component_name, subcomponent))
