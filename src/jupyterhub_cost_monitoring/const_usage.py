@@ -2,7 +2,7 @@
 Constants used to query Prometheus for JupyterHub usage data.
 """
 
-GRANULARITY = "1d"
+TIME_RESOLUTION = "5m"
 
 MEMORY_PER_USER = """
     sum(
