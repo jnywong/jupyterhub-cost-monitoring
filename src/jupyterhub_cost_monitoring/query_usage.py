@@ -30,14 +30,16 @@ def query_prometheus(query: str, from_date: str, to_date: str) -> requests.Respo
     query_api = URL(prometheus_api.with_path("/api/v1/query_range"))
     response = requests.get(query_api, params=parameters)
     response.raise_for_status()
-
     result = response.json()
-
     return result
 
 
 def query_usage_compute_per_user(
-    from_date: str, to_date: str, hub_name: str | None, component_name: str | None
+    from_date: str,
+    to_date: str,
+    hub_name: str | None,
+    component_name: str | None,
+    user_name: str | None,
 ) -> list[dict]:
     """
     Query compute usage per user from the Prometheus server.
@@ -55,16 +57,13 @@ def query_usage_compute_per_user(
         # A subcomponent is a subset of a component, e.g. "compute" can have "cpu" and "memory" as subcomponents.
         for subcomponent, query in USAGE_MAP[f"{component_name}"].items():
             response = query_prometheus(query, from_date, to_date)
-            result.extend(
-                _process_response(response, hub_name, component_name, subcomponent)
-            )
-        result = _filter_json(result, hub=hub_name)
+            result.extend(_process_response(response, component_name, subcomponent))
+        result = _filter_json(result, hub=hub_name, user=user_name)
     return result
 
 
 def _process_response(
     response: requests.Response,
-    hub_name: str | None,
     component_name: str,
     subcomponent_name: str,
 ) -> dict:
@@ -72,21 +71,20 @@ def _process_response(
     Process the response from the Prometheus server to extract compute usage data.
     """
     result = []
-
     for data in response["data"]["result"]:
+        hub = data["metric"]["namespace"]
         user = data["metric"]["annotation_hub_jupyter_org_username"]
         date = [
             datetime.utcfromtimestamp(value[0]).strftime("%Y-%m-%d")
             for value in data["values"]
         ]
         usage = [float(value[1]) for value in data["values"]]
-        hub = data["metric"]["namespace"]
         result.append(
             {
-                "user": user,
                 "hub": hub,
                 "component": component_name,
                 "subcomponent": subcomponent_name,
+                "user": user,
                 "date": date,
                 "value": usage,
             }
