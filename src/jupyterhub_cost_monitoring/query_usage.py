@@ -45,26 +45,34 @@ def query_usage_compute_per_user(
         from_date: Start date in string ISO format (YYYY-MM-DD).
         to_date: End date in string ISO format (YYYY-MM-DD).
         hub_name: Optional name of the hub to filter results.
+        component_name: Optional name of the component to filter results.
     """
 
     result = []
     if component_name is None:
         raise ValueError("FIX: loop over all component names.")
     else:
+        # A subcomponent is a subset of a component, e.g. "compute" can have "cpu" and "memory" as subcomponents.
         for subcomponent, query in USAGE_MAP[f"{component_name}"].items():
             response = query_prometheus(query, from_date, to_date)
-            result.extend(_process_response(response, component_name, subcomponent))
-
+            result.extend(
+                _process_response(response, hub_name, component_name, subcomponent)
+            )
+        result = _filter_json(result, hub=hub_name)
     return result
 
 
 def _process_response(
-    response: requests.Response, component_name: str, subcomponent_name: str
+    response: requests.Response,
+    hub_name: str | None,
+    component_name: str,
+    subcomponent_name: str,
 ) -> dict:
     """
     Process the response from the Prometheus server to extract compute usage data.
     """
     result = []
+
     for data in response["data"]["result"]:
         user = data["metric"]["annotation_hub_jupyter_org_username"]
         date = [
@@ -86,6 +94,14 @@ def _process_response(
     pivoted_result = _pivot_response_dict(result)
     processed_result = _sum_by_date(pivoted_result)
     return processed_result
+
+
+def _filter_json(result: list[dict], **filters):
+    return [
+        item
+        for item in result
+        if all(filters[k] is None or item.get(k) == filters[k] for k in filters)
+    ]
 
 
 def _pivot_response_dict(result: list[dict]) -> list[dict]:
