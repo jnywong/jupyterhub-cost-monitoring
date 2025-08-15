@@ -48,27 +48,22 @@ def query_usage_compute_per_user(
         to_date: End date in string ISO format (YYYY-MM-DD).
         hub_name: Optional name of the hub to filter results.
         component_name: Optional name of the component to filter results.
-
-    Note: A subcomponent is a subset of a component, e.g. "compute" can have "cpu" and "memory" as subcomponents.
     """
     result = []
     if component_name is None:
-        for usage in USAGE_MAP.keys():
-            for subcomponent, query in USAGE_MAP[usage].items():
-                response = query_prometheus(query, from_date, to_date)
-                result.extend(_process_response(response, usage, subcomponent))
-    else:
-        for subcomponent, query in USAGE_MAP[f"{component_name}"].items():
+        for component, query in USAGE_MAP.items():
             response = query_prometheus(query, from_date, to_date)
-            result.extend(_process_response(response, component_name, subcomponent))
-        result = _filter_json(result, hub=hub_name, user=user_name)
+            result.extend(_process_response(response, component))
+    else:
+        response = query_prometheus(USAGE_MAP[component_name], from_date, to_date)
+        result.extend(_process_response(response, component_name))
+    result = _filter_json(result, hub=hub_name, user=user_name)
     return result
 
 
 def _process_response(
     response: requests.Response,
     component_name: str,
-    subcomponent_name: str,
 ) -> dict:
     """
     Process the response from the Prometheus server to extract compute usage data.
@@ -86,7 +81,6 @@ def _process_response(
             {
                 "hub": hub,
                 "component": component_name,
-                "subcomponent": subcomponent_name,
                 "user": user,
                 "date": date,
                 "value": usage,
@@ -118,7 +112,6 @@ def _pivot_response_dict(result: list[dict]) -> list[dict]:
                     "user": entry["user"],
                     "hub": entry["hub"],
                     "component": entry["component"],
-                    "subcomponent": entry["subcomponent"],
                     "value": value,
                 }
             )
@@ -136,7 +129,6 @@ def _sum_by_date(result: list[dict]) -> list[dict]:
             entry["user"],
             entry["hub"],
             entry["component"],
-            entry["subcomponent"],
         )
         sums[key] += entry["value"]
     return [
@@ -145,8 +137,7 @@ def _sum_by_date(result: list[dict]) -> list[dict]:
             "user": user,
             "hub": hub,
             "component": component,
-            "subcomponent": subcomponent,
             "value": total,
         }
-        for (date, user, hub, component, subcomponent), total in sums.items()
+        for (date, user, hub, component), total in sums.items()
     ]
