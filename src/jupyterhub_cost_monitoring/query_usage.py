@@ -56,12 +56,7 @@ def query_total_usage(
     """
     result = []
     if component_name is None:
-        for usage in USAGE_MAP.keys():
-            for subcomponent, query in USAGE_MAP[usage].items():
-                response = query_prometheus(query, from_date, to_date)
-                result.extend(_process_response(response, usage, subcomponent))
-    else:
-        for subcomponent, query in USAGE_MAP[f"{component_name}"].items():
+        for component, query in USAGE_MAP.items():
             response = query_prometheus(query, from_date, to_date)
             result.extend(_process_response(response, component_name, subcomponent))
     result = _filter_json(result, hub=hub_name, user=user_name)
@@ -71,7 +66,6 @@ def query_total_usage(
 def _process_response(
     response: requests.Response,
     component_name: str,
-    subcomponent_name: str,
 ) -> dict:
     """
     Process the response from the Prometheus server to extract compute usage data.
@@ -93,7 +87,6 @@ def _process_response(
             {
                 "hub": hub,
                 "component": component_name,
-                "subcomponent": subcomponent_name,
                 "user": user,
                 "date": date,
                 "value": usage,
@@ -129,7 +122,6 @@ def _pivot_response_dict(result: list[dict]) -> list[dict]:
                     "user": entry["user"],
                     "hub": entry["hub"],
                     "component": entry["component"],
-                    "subcomponent": entry["subcomponent"],
                     "value": value,
                 }
             )
@@ -147,7 +139,6 @@ def _sum_by_date(result: list[dict]) -> list[dict]:
             entry["user"],
             entry["hub"],
             entry["component"],
-            entry["subcomponent"],
         )
         sums[key] += entry["value"]
     return [
@@ -156,48 +147,7 @@ def _sum_by_date(result: list[dict]) -> list[dict]:
             "user": user,
             "hub": hub,
             "component": component,
-            "subcomponent": subcomponent,
             "value": total,
         }
-        for (date, user, hub, component, subcomponent), total in sums.items()
+        for (date, user, hub, component), total in sums.items()
     ]
-
-
-def _calculate_user_weights(result: list) -> list[dict]:
-    """
-    Calculate per-user weights based on proportional usage by date, hub, and component.
-    """
-    total_by_date = defaultdict(float)
-    total_by_hub = defaultdict(float)
-    total_by_subcomponent = defaultdict(float)
-    # total_by_hub_and_component = defaultdict(float)
-    for entry in result:
-        total_by_date[entry["date"]] += entry["value"]
-        total_by_hub[(entry["hub"], entry["date"])] += entry["value"]
-        total_by_subcomponent[(entry["subcomponent"], entry["date"])] += entry["value"]
-    for entry in result:
-        entry["weight_by_date"] = _safe_divide(
-            entry["value"], total_by_date[entry["date"]]
-        )
-        entry["weight_by_hub"] = _safe_divide(
-            entry["value"], total_by_hub[(entry["hub"], entry["date"])]
-        )
-        entry["weight_by_subcomponent"] = _safe_divide(
-            entry["value"],
-            total_by_subcomponent[(entry["subcomponent"], entry["date"])],
-        )
-    return result
-
-
-def _safe_divide(a, b, default=0):
-    return a / b if b != 0 else default
-
-
-def calculate_cost_usage(
-    from_date: str,
-    to_date: str,
-    hub_name: str | None,
-    component_name: str | None,
-    user_name: str | None,
-) -> list[dict]:
-    return "hello world"
