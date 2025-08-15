@@ -38,7 +38,7 @@ def query_prometheus(
     return result
 
 
-def query_total_usage(
+def query_usage(
     from_date: str,
     to_date: str,
     hub_name: str | None,
