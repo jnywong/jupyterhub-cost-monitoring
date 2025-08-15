@@ -9,7 +9,7 @@ from datetime import datetime
 import requests
 from yarl import URL
 
-from .const_usage import GRANULARITY, USAGE_MAP
+from .const_usage import TIME_RESOLUTION, USAGE_MAP
 
 prometheus_url = os.environ.get(
     "PROMETHEUS_HOST", "http://localhost:9090"
@@ -25,7 +25,7 @@ def query_prometheus(query: str, from_date: str, to_date: str) -> requests.Respo
         "query": query,
         "start": from_date,
         "end": to_date,
-        "step": GRANULARITY,
+        "step": TIME_RESOLUTION,
     }
     query_api = URL(prometheus_api.with_path("/api/v1/query_range"))
     response = requests.get(query_api, params=parameters)
