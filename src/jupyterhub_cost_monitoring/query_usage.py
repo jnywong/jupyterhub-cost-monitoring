@@ -34,7 +34,7 @@ def query_prometheus(query: str, from_date: str, to_date: str) -> requests.Respo
     return result
 
 
-def query_usage_compute_per_user(
+def query_usage(
     from_date: str,
     to_date: str,
     hub_name: str | None,
@@ -48,6 +48,7 @@ def query_usage_compute_per_user(
         to_date: End date in string ISO format (YYYY-MM-DD).
         hub_name: Optional name of the hub to filter results.
         component_name: Optional name of the component to filter results.
+        user_name: Optional name of the user to filter results.
     """
     result = []
     if component_name is None:

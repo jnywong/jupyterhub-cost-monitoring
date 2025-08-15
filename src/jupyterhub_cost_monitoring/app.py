@@ -9,9 +9,7 @@ from .query_cost_aws import (
     query_total_costs_per_component,
     query_total_costs_per_hub,
 )
-from .query_usage import (
-    query_usage_compute_per_user,
-)
+from .query_usage import query_usage
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -49,8 +47,6 @@ def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
     else:
         from_date = to_date - timedelta(days=30)
 
-    # api_provider to_dates are exclusive, so we add one day to include it
-    to_date = to_date + timedelta(days=1)
     # prevent "end date past the beginning of next month" errors
     if to_date > now_date:
         to_date = now_date
@@ -61,6 +57,8 @@ def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
     if api_provider == "prometheus":
         return from_date.isoformat(), to_date.isoformat()
     else:
+        # "aws" to_dates are exclusive, so we add one day to include it
+        to_date = to_date + timedelta(days=1)
         from_date = from_date.strftime("%Y-%m-%d")
         to_date = to_date.strftime("%Y-%m-%d")
         return from_date, to_date
@@ -154,6 +152,4 @@ def total_usage():
     component_name = request.args.get("component")
     user_name = request.args.get("user")
 
-    return query_usage_compute_per_user(
-        from_date, to_date, hub_name, component_name, user_name
-    )
+    return query_usage(from_date, to_date, hub_name, component_name, user_name)
