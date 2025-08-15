@@ -189,3 +189,17 @@ def total_usage():
     user_name = request.args.get("user")
 
     return query_usage(from_date, to_date, hub_name, component_name, user_name)
+
+
+@app.route("/cost-usage")
+def cost_per_user():
+    """
+    Endpoint to calculate usage costs per user.
+    Expects 'from' and 'to' query parameters in the api_provider YYYY-MM-DD.
+    Optionally accepts 'hub', 'component' and 'user', query parameters.
+    """
+    from_date, to_date = _parse_from_to_in_query_params()
+    hub_name = request.args.get("hub")
+    component_name = request.args.get("component")
+    user_name = request.args.get("user")
+    return calculate_cost_usage(from_date, to_date, hub_name, component_name, user_name)

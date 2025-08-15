@@ -28,7 +28,6 @@ def query_prometheus(
         "query": query,
         "start": from_date,
         "end": to_date,
-        "step": TIME_RESOLUTION,
         "step": step,
     }
     query_api = URL(prometheus_api.with_path("/api/v1/query_range"))
@@ -72,7 +71,6 @@ def _process_response(
     Args:
         response: The response object from the Prometheus query.
         component_name: Name of the component, e.g "compute", "home directory".
-        subcomponent_name: A subset of the component being queried, e.g. "memory", "cpu".
     """
     result = []
     for data in response["data"]["result"]:
@@ -149,5 +147,39 @@ def _sum_by_date(result: list[dict]) -> list[dict]:
             "component": component,
             "value": total,
         }
-        for (date, user, hub, component), total in sums.items()
+        for (date, user, hub, component, subcomponent), total in sums.items()
     ]
+
+
+def _calculate_user_weights(result: list) -> list[dict]:
+    """
+    Calculate per-user weights based on proportional usage by date, hub, and component.
+    """
+    total_by_date = defaultdict(float)
+    total_by_hub = defaultdict(float)
+    # total_by_hub_and_component = defaultdict(float)
+    for entry in result:
+        total_by_date[entry["date"]] += entry["value"]
+        total_by_hub[(entry["hub"], entry["date"])] += entry["value"]
+    for entry in result:
+        entry["weight_by_date"] = _safe_divide(
+            entry["value"], total_by_date[entry["date"]]
+        )
+        entry["weight_by_hub"] = _safe_divide(
+            entry["value"], total_by_hub[(entry["hub"], entry["date"])]
+        )
+    return result
+
+
+def _safe_divide(a, b, default=0):
+    return a / b if b != 0 else default
+
+
+def calculate_cost_usage(
+    from_date: str,
+    to_date: str,
+    hub_name: str | None,
+    component_name: str | None,
+    user_name: str | None,
+) -> list[dict]:
+    return "hello world"
