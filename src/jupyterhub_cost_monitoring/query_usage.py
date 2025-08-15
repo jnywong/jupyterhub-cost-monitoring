@@ -10,6 +10,7 @@ import requests
 from yarl import URL
 
 from .const_usage import TIME_RESOLUTION, USAGE_MAP
+from .const_usage import TIME_RESOLUTION, USAGE_MAP
 
 prometheus_url = os.environ.get(
     "PROMETHEUS_HOST", "http://localhost:9090"
@@ -27,6 +28,7 @@ def query_prometheus(
         "query": query,
         "start": from_date,
         "end": to_date,
+        "step": TIME_RESOLUTION,
         "step": step,
     }
     query_api = URL(prometheus_api.with_path("/api/v1/query_range"))
