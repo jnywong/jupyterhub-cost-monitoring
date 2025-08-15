@@ -11,25 +11,21 @@ from .query_cost_aws import (
     query_total_costs_per_hub,
 )
 from .query_usage import (
-    query_usage_compute_per_user,
+    calculate_cost_usage,
+    query_total_usage,
 )
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
-def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
+def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws" or None):
     """
     Parse "from" and "to" query parameters, expected to be passed as YYYY-MM-DD
-    api_providerted strings or including time as well.
+    formatted strings or including time as well.
 
     Args:
-        api_provider (str): The api_provider, such as "prometheus" or "aws". Formats dates accordingly.
-    api_providerted strings or including time as well.
-
-    Args:
-        api_provider (str): The api_provider, such as "prometheus" or "aws". Formats dates accordingly.
+        api_provider (str): The api_provider, where "prometheus" formats to isoformat and "aws" formats to YYYY-MM-DD string. If None, defaults to isoformat.
 
     - "to" defaults to current date (UTC)
     - "from" defaults to 30 days prior to the "to" date
@@ -61,8 +57,6 @@ def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
     else:
         from_date = to_date - timedelta(days=30)
 
-    # api_provider to_dates are exclusive, so we add one day to include it
-    to_date = to_date + timedelta(days=1)
     # prevent "end date past the beginning of next month" errors
     if to_date > now_date:
         to_date = now_date
@@ -70,10 +64,12 @@ def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
     if from_date >= now_date:
         from_date = to_date - timedelta(days=1)
 
-    if api_provider == "prometheus":
+    if api_provider == "prometheus" or None:
         return from_date.isoformat(), to_date.isoformat()
-    else:
+    elif api_provider == "aws":
         from_date = from_date.strftime("%Y-%m-%d")
+        # AWS to_dates are exclusive, so we add one day to include it
+        to_date = to_date + timedelta(days=1)
         to_date = to_date.strftime("%Y-%m-%d")
         return from_date, to_date
 
@@ -192,6 +188,18 @@ def total_usage():
     component_name = request.args.get("component")
     user_name = request.args.get("user")
 
-    return query_usage_compute_per_user(
-        from_date, to_date, hub_name, component_name, user_name
-    )
+    return query_total_usage(from_date, to_date, hub_name, component_name, user_name)
+
+
+@app.route("/cost-usage")
+def cost_per_user():
+    """
+    Endpoint to calculate usage costs per user.
+    Expects 'from' and 'to' query parameters in the api_provider YYYY-MM-DD.
+    Optionally accepts 'hub', 'component' and 'user', query parameters.
+    """
+    from_date, to_date = _parse_from_to_in_query_params()
+    hub_name = request.args.get("hub")
+    component_name = request.args.get("component")
+    user_name = request.args.get("user")
+    return calculate_cost_usage(from_date, to_date, hub_name, component_name, user_name)
