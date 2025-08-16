@@ -151,7 +151,7 @@ def _sum_by_date(result: list[dict]) -> list[dict]:
     ]
 
 
-def _calculate_user_weights(
+def calculate_user_weights(
     result: list, group_by: list[str], filters: dict | None
 ) -> pd.DataFrame:
     """
