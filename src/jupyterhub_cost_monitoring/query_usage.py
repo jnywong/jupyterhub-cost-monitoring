@@ -10,7 +10,6 @@ import requests
 from yarl import URL
 
 from .const_usage import TIME_RESOLUTION, USAGE_MAP
-from .const_usage import TIME_RESOLUTION, USAGE_MAP
 
 prometheus_url = os.environ.get(
     "PROMETHEUS_HOST", "http://localhost:9090"
@@ -147,7 +146,7 @@ def _sum_by_date(result: list[dict]) -> list[dict]:
             "component": component,
             "value": total,
         }
-        for (date, user, hub, component, subcomponent), total in sums.items()
+        for (date, user, hub, component), total in sums.items()
     ]
 
 
