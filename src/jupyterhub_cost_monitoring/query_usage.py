@@ -5,7 +5,9 @@ Query the Prometheus server to get usage of JupyterHub resources.
 import os
 from collections import defaultdict
 from datetime import datetime
+from itertools import combinations
 
+import pandas as pd
 import requests
 from yarl import URL
 
@@ -91,8 +93,7 @@ def _process_response(
         )
     pivoted_result = _pivot_response_dict(result)
     summed_result = _sum_by_date(pivoted_result)
-    weighted_result = _calculate_user_weights(summed_result)
-    return weighted_result
+    return summed_result
 
 
 def _filter_json(result: list[dict], **filters):
@@ -150,28 +151,26 @@ def _sum_by_date(result: list[dict]) -> list[dict]:
     ]
 
 
-def _calculate_user_weights(result: list) -> list[dict]:
+def _calculate_user_weights(
+    result: list, group_by: list[str], filters: dict | None
+) -> pd.DataFrame:
     """
     Calculate per-user weights based on proportional usage by date, hub, and component.
     """
-    total_by_date = defaultdict(float)
-    total_by_hub = defaultdict(float)
-    # total_by_hub_and_component = defaultdict(float)
-    for entry in result:
-        total_by_date[entry["date"]] += entry["value"]
-        total_by_hub[(entry["hub"], entry["date"])] += entry["value"]
-    for entry in result:
-        entry["weight_by_date"] = _safe_divide(
-            entry["value"], total_by_date[entry["date"]]
-        )
-        entry["weight_by_hub"] = _safe_divide(
-            entry["value"], total_by_hub[(entry["hub"], entry["date"])]
-        )
-    return result
+    df = pd.DataFrame(result)
+    if filters:
+        for k, v in filters.items():
+            df = df[df[k] == v]
+    grouped = df.groupby(group_by + ["user"], as_index=False)["value"].sum()
 
+    for r in range(1, len(group_by) + 1):
+        for combo in combinations(group_by, r):
+            col_name = "weight_by_" + "_".join(combo)
+            grouped[col_name] = grouped["value"] / grouped.groupby(list(combo))[
+                "value"
+            ].transform("sum")
 
-def _safe_divide(a, b, default=0):
-    return a / b if b != 0 else default
+    return grouped
 
 
 def calculate_cost_usage(
