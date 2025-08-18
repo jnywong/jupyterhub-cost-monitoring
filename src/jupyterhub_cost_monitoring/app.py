@@ -1,8 +1,9 @@
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Union
 
 import pandas as pd
-from fastapi import FastAPI, Query, Union
+from fastapi import FastAPI, Query
 
 from .query_cost_aws import (
     query_hub_names,
@@ -177,13 +178,11 @@ def total_usage(
     to_date: str | None = Query(
         None, alias="to", description="End date in YYYY-MM-DDTHH:MMZ format"
     ),
-    hub_name: str | None = Query(None, description="Name of the hub to filter results"),
-    component_name: str | None = Query(
+    hub: str | None = Query(None, description="Name of the hub to filter results"),
+    component: str | None = Query(
         None, description="Name of the component to filter results"
     ),
-    user_name: str | None = Query(
-        None, description="Name of the user to filter results"
-    ),
+    user: str | None = Query(None, description="Name of the user to filter results"),
 ):
     """
     Endpoint to query total usage.
@@ -194,10 +193,10 @@ def total_usage(
         from_date, to_date, api_provider="prometheus"
     )
 
-    return query_usage(from_date, to_date, hub_name, component_name, user_name)
+    return query_usage(from_date, to_date, hub, component, user)
 
 
-@app.get("/cost-usage")
+@app.get("/total-costs-per-user")
 def cost_per_user(
     from_date: str | None = Query(
         None, alias="from", description="Start date in YYYY-MM-DDTHH:MMZ format"
@@ -205,27 +204,41 @@ def cost_per_user(
     to_date: str | None = Query(
         None, alias="to", description="End date in YYYY-MM-DDTHH:MMZ format"
     ),
-    group_by: list[str] = Query(...),
-    component: Union[str, None] = None,
-    hub: Union[str, None] = None,
+    group_by: Union[str, list[str]] = Query(
+        None, description="Group by fields, e.g. 'hub', 'component'"
+    ),
+    hub: str | None = Query(None, description="Name of the hub to filter results"),
+    component: str | None = Query(
+        None, description="Name of the component to filter results"
+    ),
+    user: str | None = Query(None, description="Name of the user to filter results"),
 ):
     """
     Endpoint to calculate usage costs per user.
     Expects 'from' and 'to' query parameters in the api_provider YYYY-MM-DD.
-    Optionally accepts 'hub', 'component' and 'user', query parameters.
+    Optionally accepts 'hub', 'component' and 'user', query parameters, as well as group_by.
     """
-    filters = {}
-    if component:
-        filters["component"] = component
-    if hub:
-        filters["hub"] = hub
+    from_date, to_date = _parse_from_to_in_query_params(
+        from_date, to_date, api_provider="prometheus"
+    )
+
     response = query_usage(
-        from_date=None,  # Use default 30 days range
-        to_date=None,
+        from_date=from_date,
+        to_date=to_date,
         hub_name=hub,
         component_name=component,
-        user_name=None,
+        user_name=None,  # Filter by user later
     )
     df = pd.DataFrame(response)
+    # Always group costs by date
+    if "date" not in group_by:
+        group_by.append("date")
+    filters = {
+        k: v
+        for k, v in {"hub": hub, "component": component, "user": user}.items()
+        if v is not None
+    }
     result = calculate_user_weights(df, group_by=group_by, filters=filters)
+    if user:
+        result = result[result["user"] == user]
     return result.to_dict(orient="records")
