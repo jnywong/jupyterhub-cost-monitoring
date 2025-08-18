@@ -5,7 +5,6 @@ Query the Prometheus server to get usage of JupyterHub resources.
 import os
 from collections import defaultdict
 from datetime import datetime
-from itertools import combinations
 
 import pandas as pd
 import requests
@@ -151,25 +150,34 @@ def _sum_by_date(result: list[dict]) -> list[dict]:
     ]
 
 
-def calculate_user_weights(
+def calculate_cost_factor(
     result: list, group_by: list[str], filters: dict | None
 ) -> pd.DataFrame:
     """
-    Calculate per-user weights based on proportional usage by date, hub, and component.
+    Calculate cost factor based on proportional usage by date, hub, and component.
     """
     df = pd.DataFrame(result)
+    grouped = df.groupby(group_by, as_index=False)["value"].sum()
+
+    # for r in range(1, len(group_by) + 1):
+    #     for combo in combinations(group_by, r):
+    #         col_name = "weight_by_" + "_".join(combo)
+    #         grouped[col_name] = grouped["value"] / grouped.groupby(list(combo))[
+    #             "value"
+    #         ].transform("sum")
+
+    # If user is in group_by, then remove to avoid cost_factor being 1.0
+    if "user" in group_by:
+        group_by.remove("user")
+    grouped["cost_factor"] = grouped["value"] / grouped.groupby(
+        group_by, as_index=False
+    )["value"].transform("sum")
+
+    return grouped
+
     if filters:
         for k, v in filters.items():
             df = df[df[k] == v]
-    grouped = df.groupby(group_by + ["user"], as_index=False)["value"].sum()
-
-    for r in range(1, len(group_by) + 1):
-        for combo in combinations(group_by, r):
-            col_name = "weight_by_" + "_".join(combo)
-            grouped[col_name] = grouped["value"] / grouped.groupby(list(combo))[
-                "value"
-            ].transform("sum")
-
     return grouped
 
 

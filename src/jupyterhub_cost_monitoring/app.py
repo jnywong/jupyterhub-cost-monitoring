@@ -12,7 +12,7 @@ from .query_cost_aws import (
     query_total_costs_per_hub,
 )
 from .query_usage import (
-    calculate_user_weights,
+    calculate_cost_factor,
     query_usage,
 )
 
@@ -231,7 +231,7 @@ def cost_per_user(
         for k, v in {"hub": hub, "component": component, "user": user}.items()
         if v is not None
     }
-    result = calculate_user_weights(df, group_by=group_by, filters=filters)
+    result = calculate_cost_factor(df, group_by=group_by, filters=filters)
     if user:
         result = result[result["user"] == user]
     return result.to_dict(orient="records")
