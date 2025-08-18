@@ -231,7 +231,9 @@ def cost_per_user(
     )
     df = pd.DataFrame(response)
     # Always group costs by date
-    if "date" not in group_by:
+    if group_by is None:
+        group_by = ["date"]
+    elif "date" not in group_by:
         group_by.append("date")
     filters = {
         k: v
