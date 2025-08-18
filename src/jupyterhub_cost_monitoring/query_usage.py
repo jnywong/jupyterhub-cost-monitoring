@@ -57,7 +57,7 @@ def query_usage(
     if component_name is None:
         for component, query in USAGE_MAP.items():
             response = query_prometheus(query, from_date, to_date)
-            result.extend(_process_response(response, component_name, subcomponent))
+            result.extend(_process_response(response, component_name))
     result = _filter_json(result, hub=hub_name, user=user_name)
     return result
 
@@ -179,13 +179,3 @@ def calculate_cost_factor(
         for k, v in filters.items():
             df = df[df[k] == v]
     return grouped
-
-
-def calculate_cost_usage(
-    from_date: str,
-    to_date: str,
-    hub_name: str | None,
-    component_name: str | None,
-    user_name: str | None,
-) -> list[dict]:
-    return "hello world"
