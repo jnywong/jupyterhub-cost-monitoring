@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-def generate_test_usage_data(
+def generate_test_data(
     data_type: str = Literal["usage", "cost"],
     from_date: str = "2025-01-01",
     to_date: str = "2025-01-02",
@@ -23,20 +23,28 @@ def generate_test_usage_data(
         users = []
         factor = 1e3
     data = []
-    for date in pd.date_range(from_date, to_date):
-        for hub in hubs:
-            for component in components:
-                entry = {
-                    "date": date.strftime("%Y-%m-%d"),
-                    "hub": hub,
-                    "component": component,
-                    "value": np.round(np.random.rand() * factor, 0),
-                }
-                if len(users) != 0:
+    if data_type == "usage":
+        for date in pd.date_range(from_date, to_date):
+            for hub in hubs:
+                for component in components:
                     for user in users:
-                        entry.update({"user": user})
+                        entry = {
+                            "date": date.strftime("%Y-%m-%d"),
+                            "hub": hub,
+                            "component": component,
+                            "value": np.round(np.random.rand() * factor, 0),
+                            "user": user,
+                        }
                         data.append(entry)
-                else:
-                    data.append(entry)
+    else:
+        for date in pd.date_range(from_date, to_date):
+            for hub in hubs:
+                for component in components:
+                    entry = {
+                        "date": date.strftime("%Y-%m-%d"),
+                        "hub": hub,
+                        "component": component,
+                        "value": np.round(np.random.rand() * factor, 0),
+                    }
     with open(f"test_data_{data_type}.json", "w") as f:
         json.dump(data, f, indent=4)
