@@ -1,21 +1,22 @@
-import logging
 from datetime import datetime, timedelta, timezone
 
 from flask import Flask, render_template_string, request, url_for
 
+from .logs import get_logger
 from .query_cost_aws import (
     query_hub_names,
     query_total_costs,
     query_total_costs_per_component,
     query_total_costs_per_hub,
+    query_total_costs_per_user,
 )
 from .query_usage import query_usage
 
 app = Flask(__name__)
-logging.basicConfig(level=logging.INFO)
+logger = get_logger(__name__)
 
 
-def _parse_from_to_in_query_params(api_provider: str = "prometheus" or "aws"):
+def _parse_from_to_in_query_params(api_provider: str = "prometheus"):
     """
     Parse "from" and "to" query parameters, expected to be passed as YYYY-MM-DD
     api_providerted strings or including time as well.
@@ -138,6 +139,48 @@ def total_costs_per_component():
     component = request.args.get("component")
 
     return query_total_costs_per_component(from_date, to_date, hub_name, component)
+
+
+@app.route("/costs-per-user")
+def costs_per_user():
+    """
+    Endpoint to query costs per user by combining AWS costs with Prometheus usage data.
+
+    This endpoint calculates individual user costs by:
+    1. Getting total AWS costs per component (compute, storage) from Cost Explorer
+    2. Getting usage fractions per user from Prometheus metrics
+    3. Multiplying total costs by each user's usage fraction
+
+    Query Parameters:
+        from (str): Start date in YYYY-MM-DD format (defaults to 30 days ago)
+        to (str): End date in YYYY-MM-DD format (defaults to current date)
+        hub (str, optional): Filter to specific hub namespace
+        component (str, optional): Filter to specific component (compute, home storage)
+        user (str, optional): Filter to specific user
+
+    Returns:
+        List of dicts with keys: date, hub, component, user, value (cost in USD)
+        Results are sorted by date, hub, component, then value (highest cost first)
+    """
+    from_date, to_date = _parse_from_to_in_query_params(api_provider="aws")
+    hub_name = request.args.get("hub")
+    component = request.args.get("component")
+    user = request.args.get("user")
+    # Grafana will pass empty string to get data for all hubs,
+    # so we need to handle that case.
+    if not hub_name:
+        hub_name = None
+    if not component:
+        component = None
+    if not user:
+        user = None
+
+    # Get per-user costs by combining AWS costs with Prometheus usage data
+    per_user_costs = query_total_costs_per_user(
+        from_date, to_date, hub_name, component, user
+    )
+
+    return per_user_costs
 
 
 @app.route("/total-usage")

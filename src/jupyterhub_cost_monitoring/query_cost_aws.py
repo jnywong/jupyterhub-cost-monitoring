@@ -3,13 +3,14 @@ Queries to AWS Cost Explorer to get different kinds of cost data.
 """
 
 import functools
-import logging
+from datetime import datetime, timezone
 
 import boto3
 
 from .cache import ttl_lru_cache
 from .const_cost_aws import (
     FILTER_ATTRIBUTABLE_COSTS,
+    FILTER_HOME_STORAGE_COSTS,
     FILTER_USAGE_COSTS,
     GRANULARITY_DAILY,
     GROUP_BY_HUB_TAG,
@@ -17,8 +18,10 @@ from .const_cost_aws import (
     METRICS_UNBLENDED_COST,
     SERVICE_COMPONENT_MAP,
 )
+from .logs import get_logger
+from .query_usage import query_usage
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 aws_ce_client = boto3.client("ce")
 
 
@@ -374,6 +377,23 @@ def query_total_costs_per_component(from_date, to_date, hub_name=None, component
     #     },
     # ]
     #
+
+    # EC2 - Other is a service that can include costs for EBS volumes and snapshots
+    # By default, these costs are mapped to the compute component, but
+    # a part of the costs from EBS volumes and snapshots can be attributed to "home storage" too
+    # so we need to query those costs separately and adjust the compute costs
+
+    filter["And"].append(FILTER_HOME_STORAGE_COSTS)
+
+    home_storage_ebs_cost_response = query_aws_cost_explorer(
+        metrics=[METRICS_UNBLENDED_COST],
+        granularity=GRANULARITY_DAILY,
+        from_date=from_date,
+        to_date=to_date,
+        filter=filter,
+        group_by=[GROUP_BY_SERVICE_DIMENSION],
+    )
+
     # processed_response is a list with entries looking like this...
     #
     # [
@@ -390,20 +410,156 @@ def query_total_costs_per_component(from_date, to_date, hub_name=None, component
         component_costs = {}
         for g in e["Groups"]:
             service_name = g["Keys"][0]
-            if not component:
-                component = _get_component_name(service_name)
+            component_name = _get_component_name(service_name)
             cost = float(g["Metrics"]["UnblendedCost"]["Amount"])
-            component_costs[component] = component_costs.get(component, 0.0) + cost
-            component = None
+            component_costs[component_name] = (
+                component_costs.get(component_name, 0.0) + cost
+            )
+
+        # Filter to specific component if requested
+        if component:
+            component_costs = {
+                k: v for k, v in component_costs.items() if k == component
+            }
+
         processed_response.extend(
             [
                 {
                     "date": e["TimePeriod"]["Start"],
                     "cost": f"{cost:.2f}",
-                    "component": component,
+                    "component": component_name,
                 }
-                for component, cost in component_costs.items()
+                for component_name, cost in component_costs.items()
             ]
         )
 
-    return processed_response
+    # Create index for faster lookups by date and component name
+    entries_by_date = {}
+    for entry in processed_response:
+        date = entry["date"]
+        if date not in entries_by_date:
+            entries_by_date[date] = {}
+        entries_by_date[date][entry["component"]] = entry
+
+    # Process home storage costs and adjust compute costs accordingly
+    for home_e in home_storage_ebs_cost_response["ResultsByTime"]:
+        date = home_e["TimePeriod"]["Start"]
+
+        # Calculate total home storage cost for this date
+        home_storage_cost = 0.0
+        for g in home_e["Groups"]:
+            if g["Keys"][0] == "EC2 - Other":
+                home_storage_cost += float(g["Metrics"]["UnblendedCost"]["Amount"])
+
+        if home_storage_cost > 0:
+            date_entries = entries_by_date.get(date, {})
+
+            # Subtract from compute component (EC2 - Other maps to compute)
+            compute_entry = date_entries.get("compute")
+            if compute_entry:
+                current_compute_cost = float(compute_entry["cost"])
+                new_compute_cost = max(0.0, current_compute_cost - home_storage_cost)
+                compute_entry["cost"] = f"{new_compute_cost:.2f}"
+                logger.debug(
+                    f"Adjusted compute cost for {date}: {current_compute_cost:.2f} -> {new_compute_cost:.2f}"
+                )
+
+            # Add to home storage component
+            home_storage_entry = date_entries.get("home storage")
+            if home_storage_entry:
+                current_home_storage_cost = float(home_storage_entry["cost"])
+                new_home_storage_cost = current_home_storage_cost + home_storage_cost
+                home_storage_entry["cost"] = f"{new_home_storage_cost:.2f}"
+                logger.debug(
+                    f"Updated home storage cost for {date}: {current_home_storage_cost:.2f} -> {new_home_storage_cost:.2f}"
+                )
+            else:
+                # Create new home storage entry if it doesn't exist
+                new_entry = {
+                    "date": date,
+                    "cost": f"{home_storage_cost:.2f}",
+                    "component": "home storage",
+                }
+                # Update index
+                if date not in entries_by_date:
+                    entries_by_date[date] = {}
+                entries_by_date[date]["home storage"] = new_entry
+                logger.debug(
+                    f"Added new home storage entry for {date}: {home_storage_cost:.2f}"
+                )
+
+    # Generate final response from index, sorted by date
+    final_response = []
+    for date in sorted(entries_by_date.keys()):
+        for _, entry in entries_by_date[date].items():
+            final_response.append(entry)
+
+    return final_response
+
+
+def query_total_costs_per_user(
+    from_date, to_date, hub: str = None, component: str = None, user: str = None
+):
+    """
+    Query total costs per user by combining AWS costs with Prometheus usage data.
+
+    This function calculates individual user costs by:
+    1. Getting total AWS costs per component (compute, home storage) from Cost Explorer
+    2. Getting usage fractions per user from Prometheus metrics
+    3. Multiplying total costs by each user's usage fraction
+
+    Args:
+        from_date: Start date for the query (YYYY-MM-DD format)
+        to_date: End date for the query (YYYY-MM-DD format)
+        hub: The hub namespace to query (optional, if None queries all hubs)
+        component: The component to query (optional, if None queries all components)
+        user: The user to query (optional, if None queries all users)
+
+    Returns:
+        List of dicts with keys: date, hub, component, user, value (cost in USD)
+        Results are sorted by date, hub, component, then value (highest cost first)
+    """
+    costs_per_component = query_total_costs_per_component(from_date, to_date, hub)
+
+    costs_by_date = {}
+    for entry in costs_per_component:
+        costs_by_date.setdefault(entry["date"], {})[entry["component"]] = float(
+            entry["cost"]
+        )
+
+    # Convert dates to Unix timestamps for Prometheus query
+    # Treat from_date and to_date as UTC midnight
+    # TODO: double check timezone handling
+    start_dt = datetime.strptime(from_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    end_dt = datetime.strptime(to_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    prometheus_from = str(
+        int(start_dt.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+    )
+    prometheus_to = str(
+        int(end_dt.replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+    )
+
+    # Get user usage percentages from Prometheus
+    usage_shares = query_usage(
+        prometheus_from,
+        prometheus_to,
+        hub_name=hub,
+        component_name=component,
+        user_name=user,
+    )
+
+    results = []
+    for entry in usage_shares:
+        date = entry["date"]
+        component = entry["component"]
+        usage_share = entry["value"]
+        if date in costs_by_date and component in costs_by_date[date]:
+            total_cost_for_component = costs_by_date[date][component]
+            entry["value"] = round(
+                usage_share * total_cost_for_component, 4
+            )  # Adjust usage share to cost
+            results.append(entry)
+    results.sort(
+        key=lambda x: (x["date"], x["hub"], x["component"], -float(x["value"]))
+    )
+    return results
