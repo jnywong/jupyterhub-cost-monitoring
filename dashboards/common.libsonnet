@@ -1,4 +1,4 @@
-local grafonnet = import 'grafonnet/main.libsonnet';
+local grafonnet = import 'github.com/grafana/grafonnet/gen/grafonnet-latest/main.libsonnet';
 local var = grafonnet.dashboard.variable;
 local ts = grafonnet.panel.timeSeries;
 local bc = grafonnet.panel.barChart;
