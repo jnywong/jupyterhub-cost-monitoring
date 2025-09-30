@@ -378,7 +378,9 @@ def _process_core_costs(entries_by_date, core_cost_response):
 
 @ttl_lru_cache(seconds_to_live=3600)
 def query_total_costs_per_component(
-    date_range: DateRange, hub_name: str = None, component: str = None
+    date_range: DateRange,
+    hub_name: str = None,
+    component: str = None,
 ):
     """
     Query total costs per component from AWS Cost Explorer for the given date range.
