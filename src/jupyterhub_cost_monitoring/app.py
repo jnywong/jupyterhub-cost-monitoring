@@ -110,9 +110,9 @@ def total_costs_per_component(
     # Parse and validate date parameters into DateRange object
     date_range = parse_from_to_in_query_params(from_date, to_date)
 
-    if not hub or hub == "all":
+    if not hub or hub.lower() == "all":
         hub = None
-    if not component or component == "all":
+    if not component or component.lower() == "all":
         component = None
 
     return query_total_costs_per_component(date_range, hub, component)
@@ -131,6 +131,9 @@ def costs_per_user(
         None, description="Name of the component to filter results"
     ),
     user: str | None = Query(None, description="Name of the user to filter results"),
+    limit: str | None = Query(
+        None, description="Limit number of results to top N users by total cost."
+    ),
 ):
     """
     Endpoint to query costs per user by combining AWS costs with Prometheus usage data.
@@ -146,6 +149,7 @@ def costs_per_user(
         hub (str, optional): Filter to specific hub namespace
         component (str, optional): Filter to specific component (compute, home storage)
         user (str, optional): Filter to specific user
+        limit (int, optional): Limit number of results to top N users by total cost.
 
     Returns:
         List of dicts with keys: date, hub, component, user, value (cost in USD)
@@ -154,15 +158,19 @@ def costs_per_user(
     # Parse and validate date parameters into DateRange object
     date_range = parse_from_to_in_query_params(from_date, to_date)
 
-    if not hub or hub == "all":
+    if not hub or hub.lower() == "all":
         hub = None
-    if not component or component == "all":
+    if not component or component.lower() == "all":
         component = None
-    if not user or user == "all":
+    if not user or user.lower() == "all":
         user = None
+    if not limit or (str(limit).lower() == "all"):
+        limit = None
+
+    logger.info(f"Limit parameter: {limit}")
 
     # Get per-user costs by combining AWS costs with Prometheus usage data
-    per_user_costs = query_total_costs_per_user(date_range, hub, component, user)
+    per_user_costs = query_total_costs_per_user(date_range, hub, component, user, limit)
 
     return per_user_costs
 
@@ -189,11 +197,11 @@ def total_usage(
     # Parse and validate date parameters into DateRange object
     date_range = parse_from_to_in_query_params(from_date, to_date)
 
-    if not hub or hub == "all":
+    if not hub or hub.lower() == "all":
         hub = None
-    if not component or component == "all":
+    if not component or component.lower() == "all":
         component = None
-    if not user or user == "all":
+    if not user or user.lower() == "all":
         user = None
 
     return query_usage(date_range, hub, component, user)
