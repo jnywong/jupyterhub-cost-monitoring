@@ -36,6 +36,10 @@ jupyterhub-cost-monitoring:
       value: "<name-of-cluster>"
 ```
 
+## Documentation
+
+Please refer to the documentation at [https://jupyterhub-cost-monitoring.readthedocs.io/en/latest/](https://jupyterhub-cost-monitoring.readthedocs.io/en/latest/)
+
 ## Contributing
 
 Contributions to the `jupyterhub-cost-monitoring` project are welcome! Please follow the standard GitHub workflow:
