@@ -2,6 +2,7 @@
 Queries to AWS Cost Explorer to get different kinds of cost data.
 """
 
+import copy
 import functools
 from pprint import pformat
 
@@ -21,7 +22,7 @@ from .const_cost_aws import (
 )
 from .date_utils import DateRange
 from .logs import get_logger
-from .query_usage import query_usage
+from .query_usage import _filter_json, query_usage, query_user_groups
 
 logger = get_logger(__name__)
 aws_ce_client = boto3.client("ce")
@@ -517,6 +518,7 @@ def query_total_costs_per_user(
     hub: str = None,
     component: str = None,
     user: str = None,
+    usergroup: str = None,
     limit: str = None,
 ):
     """
@@ -534,6 +536,7 @@ def query_total_costs_per_user(
         hub: The hub namespace to query (optional, if None queries all hubs)
         component: The component to query (optional, if None queries all components)
         user: The user to query (optional, if None queries all users)
+        usergroup: The user group to query (optional, if None queries all user groups)
         limit: Limit number of results to top N users by total cost (optional, if None returns all users)
 
     Returns:
@@ -541,7 +544,7 @@ def query_total_costs_per_user(
         Results are sorted by date, hub, component, then value (highest cost first)
     """
     # Get AWS cost data using the DateRange object
-    costs_per_component = query_total_costs_per_component(date_range, hub)
+    costs_per_component = query_total_costs_per_component(date_range, hub, component)
 
     costs_by_date = {}
     for entry in costs_per_component:
@@ -558,30 +561,49 @@ def query_total_costs_per_user(
         component_name=component,
         user_name=user,
     )
-
     results = []
     for entry in usage_shares:
-        date = entry["date"]
-        component = entry["component"]
+        d = entry["date"]
+        c = entry["component"]
         usage_share = entry["value"]
-        if date in costs_by_date and component in costs_by_date[date]:
-            total_cost_for_component = costs_by_date[date][component]
+        if d in costs_by_date and c in costs_by_date[d]:
+            total_cost_for_component = costs_by_date[d][c]
             entry["value"] = round(
                 usage_share * total_cost_for_component, 4
             )  # Adjust usage share to cost
             results.append(entry)
     results = [x for x in results if x["hub"] != "binder"]  # Exclude binder hubs
+    user_groups = query_user_groups(date_range, hub, user)
+    list_groups = []
+    for r in results:
+        for entry in user_groups:
+            if (r["date"] == entry["date"]) and (
+                r["hub"] == entry["hub"] and (r["user"] == entry["username"])
+            ):
+                if "usergroup" not in r.keys():
+                    r["usergroup"] = entry["usergroup"]
+                else:
+                    r_copy = copy.deepcopy(r)
+                    r_copy["usergroup"] = entry["usergroup"]
+                    list_groups.append(r_copy)
+            else:
+                logger.debug(f"No username match for group membership: {r['user']}")
+    logger.debug(f"List groups: {list_groups}")
+    results.extend(list_groups)
     if limit:
         limit = int(limit)
         user_costs = {}
         for entry in results:
-            user_key = (entry["hub"], entry["user"])
-            user_costs[user_key] = user_costs.get(user_key, 0) + entry["value"]
+            user_costs[entry["user"]] = (
+                user_costs.get(entry["user"], 0) + entry["value"]
+            )
         top_users = sorted(user_costs.items(), key=lambda x: -x[1])[:limit]
         top_user_set = {user for user, _ in top_users}
-        results = [
-            entry for entry in results if (entry["hub"], entry["user"]) in top_user_set
-        ]
+        logger.debug(f"Top users: {top_users}")
+        results = [entry for entry in results if entry["user"] in top_user_set]
+    results = _filter_json(
+        results, hub=hub, component=component, user=user, usergroup=usergroup
+    )
     results.sort(
         key=lambda x: (x["date"], x["hub"], x["component"], -float(x["value"]))
     )
