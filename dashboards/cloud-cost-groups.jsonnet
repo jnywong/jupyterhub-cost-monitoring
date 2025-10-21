@@ -3,6 +3,7 @@ local grafonnet = import '../../vendor/gen/grafonnet-v11.4.0/main.libsonnet';
 local dashboard = grafonnet.dashboard;
 local bc = grafonnet.panel.barChart;
 local bg = grafonnet.panel.barGauge;
+local tb = grafonnet.panel.table;
 local var = grafonnet.dashboard.variable;
 
 local common = import './common.libsonnet';
@@ -19,7 +20,7 @@ local TotalHub =
       - workshop: a hub for events such as workshops and tutorials, e.g. workshop.<your-community>.2i2c.cloud
     |||
   )
-  + bg.panelOptions.withGridPos(h=8, w=8, x=0, y=0)
+  + bg.panelOptions.withGridPos(h=7, w=8, x=0, y=0)
   + bg.queryOptions.withTargets([
     common.queryHubTarget
     {
@@ -80,7 +81,7 @@ local TotalComponent =
       - support: compute and storage for support functions
     |||
   )
-  + bg.panelOptions.withGridPos(h=8, w=8, x=8, y=0)
+  + bg.panelOptions.withGridPos(h=7, w=8, x=8, y=0)
   + bg.queryOptions.withTargets([
     common.queryComponentTarget
     {
@@ -119,6 +120,53 @@ local TotalComponent =
   + bg.standardOptions.color.withMode('continuous-BlYlRd')
 ;
 
+local TotalGroup =
+  common.bgOptions
+  + bg.new('Total by Group')
+  + bg.panelOptions.withDescription(
+    |||
+      Total costs by group are summed over the time period selected.
+
+      Note: Users with multiple group memberships are double-counted. E.g. if user 1 is a member of group 1 and group 2, then the user's individual costs are included in the total sum for group 1 and group 2. 
+    |||
+  )
+  + bg.panelOptions.withGridPos(h=7, w=12, x=0, y=8)
+  + bg.queryOptions.withTargets([
+    common.queryGroupTarget
+    {
+      url: 'http://jupyterhub-cost-monitoring.support.svc.cluster.local/total-costs-per-group?from=${__from:date}&to=${__to:date}',
+    },
+  ])
+  + bg.queryOptions.withTransformations([
+    bg.queryOptions.transformation.withId('groupBy')
+    + bg.queryOptions.transformation.withOptions({
+      fields: {
+        Cost: {
+          aggregations: [
+            'sum',
+          ],
+          operation: 'aggregate',
+        },
+        Group: {
+          aggregations: [],
+          operation: 'groupby',
+        },
+      },
+    }),
+    bg.queryOptions.transformation.withId('sortBy')
+    + bg.queryOptions.transformation.withOptions({
+      sort: [
+        {
+          asc: true,
+          field: 'Group',
+        },
+      ],
+    }),    
+    bg.queryOptions.transformation.withId('transpose')
+  ])
+  + bg.standardOptions.color.withMode('continuous-BlYlRd')
+;
+
 local Top5 =
   common.bgOptions
   + bg.new('Top 5 users')
@@ -127,7 +175,7 @@ local Top5 =
       Shows the top 5 users by cost across all hubs and components over the selected time period.
     |||
   )
-  + bg.panelOptions.withGridPos(h=8, w=8, x=16, y=0)
+  + bg.panelOptions.withGridPos(h=7, w=8, x=16, y=0)
   + bg.queryOptions.withTargets([
     common.queryUsersTarget
     {
@@ -229,6 +277,7 @@ dashboard.new('Group cloud costs')
     TotalHub,
     TotalComponent,
     Top5,
+    TotalGroup,
     Hub,
   ],
 )
