@@ -120,53 +120,6 @@ local TotalComponent =
   + bg.standardOptions.color.withMode('continuous-BlYlRd')
 ;
 
-local TotalGroup =
-  common.bgOptions
-  + bg.new('Total by Group')
-  + bg.panelOptions.withDescription(
-    |||
-      Total costs by group are summed over the time period selected.
-
-      Note: Users with multiple group memberships are double-counted. E.g. if user 1 is a member of group 1 and group 2, then the user's individual costs are included in the total sum for group 1 and group 2. 
-    |||
-  )
-  + bg.panelOptions.withGridPos(h=7, w=12, x=0, y=8)
-  + bg.queryOptions.withTargets([
-    common.queryGroupTarget
-    {
-      url: 'http://jupyterhub-cost-monitoring.support.svc.cluster.local/total-costs-per-group?from=${__from:date}&to=${__to:date}',
-    },
-  ])
-  + bg.queryOptions.withTransformations([
-    bg.queryOptions.transformation.withId('groupBy')
-    + bg.queryOptions.transformation.withOptions({
-      fields: {
-        Cost: {
-          aggregations: [
-            'sum',
-          ],
-          operation: 'aggregate',
-        },
-        Group: {
-          aggregations: [],
-          operation: 'groupby',
-        },
-      },
-    }),
-    bg.queryOptions.transformation.withId('sortBy')
-    + bg.queryOptions.transformation.withOptions({
-      sort: [
-        {
-          asc: true,
-          field: 'Group',
-        },
-      ],
-    }),    
-    bg.queryOptions.transformation.withId('transpose')
-  ])
-  + bg.standardOptions.color.withMode('continuous-BlYlRd')
-;
-
 local Top5 =
   common.bgOptions
   + bg.new('Top 5 users')
@@ -239,6 +192,104 @@ local Top5 =
   ])
 ;
 
+local TotalGroup =
+  common.bgOptions
+  + bg.new('Total by Group')
+  + bg.panelOptions.withDescription(
+    |||
+      Total costs by group are summed over the time period selected.
+
+      Note: Users with multiple group memberships are double-counted. E.g. if user 1 is a member of group 1 and group 2, then the user's individual costs are included in the total sums of each group.
+    |||
+  )
+  + bg.panelOptions.withGridPos(h=7, w=12, x=0, y=8)
+  + bg.queryOptions.withTargets([
+    common.queryGroupTarget
+    {
+      url: 'http://jupyterhub-cost-monitoring.support.svc.cluster.local/total-costs-per-group?from=${__from:date}&to=${__to:date}',
+    },
+  ])
+  + bg.queryOptions.withTransformations([
+    bg.queryOptions.transformation.withId('groupBy')
+    + bg.queryOptions.transformation.withOptions({
+      fields: {
+        Cost: {
+          aggregations: [
+            'sum',
+          ],
+          operation: 'aggregate',
+        },
+        Group: {
+          aggregations: [],
+          operation: 'groupby',
+        },
+      },
+    }),
+    bg.queryOptions.transformation.withId('sortBy')
+    + bg.queryOptions.transformation.withOptions({
+      sort: [
+        {
+          asc: true,
+          field: 'Group',
+        },
+      ],
+    }),    
+    bg.queryOptions.transformation.withId('transpose')
+  ])
+  + bg.standardOptions.color.withMode('continuous-BlYlRd')
+;
+
+local MultipleGroup =
+  tb.new('Users with multiple group memberships')
+  + tb.panelOptions.withDescription(
+    |||
+      List of users with multiple group memberships.
+
+      Note: Users with multiple group memberships are double-counted. E.g. if user 1 is a member of group 1 and group 2, then the user's individual costs are included in the total sums of each group.
+    |||
+  )
+  + tb.panelOptions.withGridPos(h=7, w=12, x=12, y=7)
+  + tb.queryOptions.withTargets([
+    common.queryMultipleGroupTarget
+    {
+      url: 'http://jupyterhub-cost-monitoring.support.svc.cluster.local/user-groups?from=${__from:date}&to=${__to:date}',
+    },
+  ])
+  + tb.queryOptions.withTransformations([
+    tb.queryOptions.transformation.withId('groupBy')
+    + tb.queryOptions.transformation.withOptions({
+      fields: {
+        usergroup: {
+          aggregations: [],
+          operation: 'aggregate',
+        },
+        username_escaped: {
+          aggregations: [],
+          operation: 'groupby',
+        },
+      },
+    }),
+    tb.queryOptions.transformation.withId('groupToNestedTable')
+    + tb.queryOptions.transformation.withOptions({
+      fields: {
+        "usergroup": {
+          "aggregations": []
+        },
+        "username_escaped": {
+          "aggregations": [],
+          "operation": "groupby"
+        }
+      }
+    }),    
+    tb.queryOptions.transformation.withId('organize')
+    + tb.queryOptions.transformation.withOptions({
+      renameByName: {
+        username_escaped: 'User',
+      },
+    }),
+  ])
+;
+
 local Hub =
   common.bcOptions
   + bc.new('Hub – $hub_user, Component – $component')
@@ -278,6 +329,7 @@ dashboard.new('Group cloud costs')
     TotalComponent,
     Top5,
     TotalGroup,
+    MultipleGroup,
     Hub,
   ],
 )

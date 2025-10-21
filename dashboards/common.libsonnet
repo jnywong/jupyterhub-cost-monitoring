@@ -221,6 +221,23 @@ local bg = grafonnet.panel.barGauge;
     },
     format: 'table',
     refId: 'A',
+  },
+
+  queryMultipleGroupTarget: {
+    datasource: {
+      type: 'yesoreyeram-infinity-datasource',
+      uid: '${infinity_datasource}',
+    },
+    parser: 'backend',
+    root_selector: '$filter($, function($v, $i, $a) {\n  $v.username in $distinct(($a[usergroup="multiple"].username))\n})\n',
+    type: 'json',
+    source: 'url',
+    url_options: {
+      method: 'GET',
+      data: '',
+    },
+    format: 'table',
+    refId: 'A',
   },  
 
   // grafana ref:   https://grafana.com/docs/grafana/v11.1/panels-visualizations/visualizations/time-series/
