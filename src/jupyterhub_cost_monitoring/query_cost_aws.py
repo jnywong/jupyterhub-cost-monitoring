@@ -634,9 +634,7 @@ def query_total_costs_per_group(
     response = {}
     for ug in user_groups:
         for r in results:
-            if r["date"] == ug["date"] and (
-                r["usergroup"] == ug["usergroup"] or r["usergroup"] == "none"
-            ):
+            if r["date"] == ug["date"] and r["usergroup"] == ug["usergroup"]:
                 key = (r["date"], r["usergroup"])
                 logger.debug(f"Key: {key}, Value: {r['value']}")
                 response[key] = response.get(key, 0) + float(r["value"])
