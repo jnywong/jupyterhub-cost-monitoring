@@ -248,7 +248,7 @@ def query_user_groups(
     user_name: str | None = None,
     group_name: str | None = None,
 ) -> list[dict]:
-    response = query_prometheus(USER_GROUP_INFO, date_range, step="12h")
+    response = query_prometheus(USER_GROUP_INFO, date_range, step="1d")
     result = _process_user_groups(response, hub_name, user_name, group_name)
     return result
 
