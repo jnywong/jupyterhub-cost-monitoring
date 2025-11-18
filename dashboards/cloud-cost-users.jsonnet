@@ -206,7 +206,7 @@ local Hub =
   + bc.queryOptions.withTargets([
     common.queryUsersTarget
     {
-      url: 'http://jupyterhub-cost-monitoring.support.svc.cluster.local/costs-per-user?from=${__from:date}&to=${__to:date}&hub=$hub_user&component=$component&limit=$limit',
+      url: 'http://jupyterhub-cost-monitoring.support.svc.cluster.local/costs-per-user?from=${__from:date}&to=${__to:date}&hub=$hub_user&component=$component&usergroup=$usergroup&limit=$limit',
     },
   ])
   + bc.panelOptions.withRepeat('hub_user')
@@ -219,10 +219,12 @@ dashboard.new('User cloud costs')
 + dashboard.withEditable(true)
 + dashboard.time.withFrom('now-30d')
 + dashboard.withVariables([
+  common.variables.infinity_datasource,
+  common.variables.prometheus_datasource,
   common.variables.hub_user,
   common.variables.component,
+  common.variables.usergroup,
   common.variables.limit,
-  common.variables.infinity_datasource,
 ])
 + dashboard.withLinks([
   link.link.new('Community Hub Guide', 'https://docs.2i2c.org/admin/monitoring/'),
