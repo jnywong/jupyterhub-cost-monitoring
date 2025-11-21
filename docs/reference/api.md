@@ -1,4 +1,21 @@
+---
+title: FastAPI v0.1.0
+language_tabs:
+  - shell: Shell
+  - http: HTTP
+  - javascript: JavaScript
+  - ruby: Ruby
+  - python: Python
+  - php: PHP
+  - java: Java
+  - go: Go
+toc_footers: []
+includes: []
+search: true
+highlight_theme: darkula
+headingLevel: 2
 
+---
 
 <h1 id="fastapi-default">Default</h1>
 
