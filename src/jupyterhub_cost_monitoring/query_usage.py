@@ -46,11 +46,11 @@ def query_prometheus(query: str, date_range: DateRange, step: str) -> requests.R
         "step": step,
     }
     query_api = URL(prometheus_api.with_path("/api/v1/query_range"))
-    response = requests.get(query_api, params=parameters)
-    logger.info(f"Querying Prometheus: {response.url}")
-    response.raise_for_status()
-    result = response.json()
-    return result
+    with requests.get(query_api, params=parameters) as response:
+        logger.info(f"Querying Prometheus: {response.url}")
+        response.raise_for_status()
+        result = response.json()
+        return result
 
 
 def query_usage(
