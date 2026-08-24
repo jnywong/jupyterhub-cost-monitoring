@@ -19,7 +19,7 @@ def ttl_lru_cache(seconds_to_live: int = 3600, maxsize: int = 128):
 
     def wrapper(func):
         @lru_cache(maxsize)
-        def inner(__ttl, *args, **kwargs):
+        def inner(__ttl, /, *args, **kwargs):
             # Note that __ttl is not passed down to func,
             # as it's only used to trigger cache miss after some time
             return func(*args, **kwargs)

@@ -7,7 +7,9 @@ import functools
 from pprint import pformat
 
 import boto3
-import requests
+from botocore.exceptions import BotoCoreError, ClientError
+from fastapi import HTTPException
+from requests.exceptions import RequestException
 
 from .cache import ttl_lru_cache
 from .const_cost_aws import (
@@ -274,7 +276,7 @@ def _process_home_storage_costs(entries_by_date, home_storage_ebs_cost_response)
                 )
 
 
-def _add_hub_filter(filter_dict: dict, hub_name: str = None) -> None:
+def _add_hub_filter(filter_dict: dict, hub_name: str | None) -> None:
     """
     Add hub-specific filtering to a given filter dictionary.
 
@@ -381,8 +383,8 @@ def _process_core_costs(entries_by_date, core_cost_response):
 @ttl_lru_cache(seconds_to_live=3600)
 def query_total_costs_per_component(
     date_range: DateRange,
-    hub_name: str = None,
-    component: str = None,
+    hub_name: str | None,
+    component: str | None,
 ):
     """
     Query total costs per component from AWS Cost Explorer for the given date range.
@@ -505,7 +507,7 @@ def query_total_costs_per_component(
     # Generate final response from index, sorted by date
     final_response = []
     for date in sorted(entries_by_date.keys()):
-        for _, entry in entries_by_date[date].items():
+        for entry in entries_by_date[date].values():
             if component and entry["component"] != component:
                 continue
             final_response.append(entry)
@@ -516,11 +518,11 @@ def query_total_costs_per_component(
 @ttl_lru_cache(seconds_to_live=3600)
 def query_total_costs_per_user(
     date_range: DateRange,
-    hub: str = None,
-    component: str = None,
-    user: str = None,
-    usergroup: str = None,
-    limit: str = None,
+    hub: str | None,
+    component: str | None,
+    user: str | None,
+    usergroup: str | None,
+    limit: str | None,
 ):
     """
     Query total costs per user by combining AWS costs with Prometheus usage data.
@@ -556,15 +558,12 @@ def query_total_costs_per_user(
     # Get user usage percentages from Prometheus using the same DateRange object
     # This ensures we query the same logical date range for both AWS and Prometheus,
     # accounting for their different date range semantics (exclusive vs inclusive)
-    try:
-        usage_shares = query_usage(
-            date_range,
-            hub_name=hub,
-            component_name=component,
-            user_name=user,
-        )
-    except requests.exceptions.ConnectionError:
-        raise
+    usage_shares = query_usage(
+        date_range,
+        hub_name=hub,
+        component_name=component,
+        user_name=user,
+    )
     results = []
     for entry in usage_shares:
         d = entry["date"]
@@ -644,9 +643,12 @@ def query_total_costs_per_group(
     """
     try:
         results = query_total_costs_per_user(date_range=date_range)
-    except Exception as e:
-        logger.exception(f"HTTP request failed: {e}")
-        raise
+    except (ClientError, BotoCoreError) as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    except RequestException as e:
+        raise HTTPException(
+            status_code=e.response.status_code, detail=f"{e.response.text}"
+        )
     response = {}
     for r in results:
         key = (r["date"], r["usergroup"])
