@@ -193,7 +193,9 @@ class TestParseDateRangeParams:
             # Mock current time as 2025-02-15 midnight UTC
             mock_now = datetime(2025, 2, 15, tzinfo=UTC)
             mock_dt.now.return_value = mock_now
-            mock_dt.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
+            mock_dt.side_effect = lambda *args, **kwargs: datetime(
+                *args, tzinfo=UTC, **kwargs
+            )
 
             result = parse_from_to_in_query_params()
 
