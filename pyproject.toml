@@ -1,8 +1,34 @@
+################################################################################
+# Build Configuration
+################################################################################
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling", "hatch-vcs"]
+
+################################################################################
+# Project Configuration
+################################################################################
+
 [project]
 name = "jupyterhub-cost-monitoring"
-version = "0.1.0"
+dynamic = ["version"]
 description = "This tool provides a per-user cost reporting system for JupyterHubs running on AWS, enabling hub administrators to monitor costs associated with each user. This approach delivers cloud observability and cost transparency that can be reliably deployed using Kubernetes and integrated with Zero to JupyterHub distributions."
-readme = "README.md"
+authors = [
+    { name = "jnywong", email = "jnywong.pro@gmail.com" },
+]
+license = "BSD-3-Clause"
+readme = {"file" = "README.md", "content-type" = "text/markdown"}
+# Please consult https://pypi.org/classifiers/ for a full list.
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Typing :: Typed",
+]
+keywords = ["jupyterhub", "prometheus", "aws", "kubernetes", "python"]
 requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.39.12",
@@ -15,19 +41,216 @@ dependencies = [
     "yarl>=1.20.1",
 ]
 
-[dependency-groups]
+[project.urls]
+"Homepage" = "https://github.com/2i2c-org/jupyterhub-cost-monitoring"
+"Source Code" = "https://github.com/2i2c-org/jupyterhub-cost-monitoring"
+"Bug Tracker" = "https://github.com/2i2c-org/jupyterhub-cost-monitoring/issues"
+"Documentation" = "https://jupyterhub-cost-monitoring.readthedocs.io/en/latest/"
+
+[project.optional-dependencies]
 dev = [
-    "mystmd>=1.6.0",
-    "pytest>=8.4.1",
-    "ruff>=0.12.5",
+    "ipython~=9.12"
 ]
+
+################################################################################
+# Tool Configuration
+################################################################################
+
+# Exclude files outside package
+[tool.hatch.build]
+only-packages = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jupyterhub_cost_monitoring"]
+
+# [tool.hatch.build.hooks.vcs]
+version-file = "src/jupyterhub_cost_monitoring/_version.py"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+version_scheme = "no-guess-dev"
 
 [tool.isort]
 profile = "black"
 
-[tool.uv.sources]
-escapism = { git = "https://github.com/jupyterhub/escapism", tag = "1.0.1" }
+[tool.pydoclint]
+style = "google"
+arg-type-hints-in-docstring = false
+check-return-types = false
+check-yield-types = false
+exclude = "_version.py"
 
-[pytest]
-log_cli = true
+[tool.pytest.ini_options]
+addopts = "--verbose --color=yes --durations=10"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+log_cli = "True"
 log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+testpaths = ["tests"]
+markers = ["raises"]
+
+[tool.coverage.paths]
+source = [
+    "src/jupyterhub_cost_monitoring",
+]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+omit = [
+    "src/jupyterhub_cost_monitoring/_version.py",
+]
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover"]
+precision = 2
+
+# tbump is used to simplify and standardize the release process when updating
+# the version, making a git commit and tag, and pushing changes.
+#
+# ref: https://github.com/your-tools/tbump#readme
+#
+[tool.tbump]
+github_url = "https://github.com/2i2c-org/jupyterhub-cost-monitoring"
+
+[tool.tbump.version]
+current = "0.1.5.dev"
+regex = '''
+    (?P<major>\d+)
+    \.
+    (?P<minor>\d+)
+    \.
+    (?P<patch>\d+)
+    (?P<pre>((a|b|rc)\d+)|)
+    \.?
+    (?P<dev>(?<=\.)dev\d*|)
+'''
+
+[tool.tbump.git]
+message_template = "Bump to {new_version}"
+tag_template = "v{new_version}"
+
+[[tool.tbump.file]]
+src = "src/jupyterhub_cost_monitoring/_version.py"
+
+################################################################################
+# Hatch Environments
+################################################################################
+
+[tool.hatch.envs.default]
+python="3.14"
+installer="pip"
+post-install-commands = [
+  "python -m pip install --upgrade pip"
+]
+
+[tool.hatch.envs.py313]
+python = "3.13"
+
+[tool.hatch.envs.py312]
+python = "3.12"
+
+[tool.hatch.envs.dev]
+inherits = ["default"]
+description = """
+Environment for local development.
+"""
+features = ["dev"]
+
+[tool.hatch.envs.release]
+inherits = ["default"]
+description = """
+Environment for making releases.
+"""
+dependencies = [
+    "github-activity~=1.1",
+    "tbump~=6.11",
+]
+
+[tool.hatch.envs.install]
+description = """Test the installation the package."""
+dependencies = [
+    "pip",
+    "twine",
+]
+detached = true
+builder = true
+
+[tool.hatch.envs.install.scripts]
+check = [
+    "pip check",
+    "hatch build {args:--clean}",
+    "twine check dist/*",
+]
+
+[tool.hatch.envs.test]
+description = """
+Run test suite
+"""
+inherits = ["default"]
+dependencies = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-raises",
+    "pytest-randomly",
+    "pytest-xdist",
+    "pytest-aiohttp~=1.1.0",
+    "pytest-asyncio~=1.4.0",
+    "aioresponses~=0.7.0",
+    "beautifulsoup4",
+]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.12", "3.13", "3.14"]
+
+[tool.hatch.envs.test.scripts]
+run = "pytest {args:--cov=src/jupyterhub_cost_monitoring --cov-report=term-missing --cov-report=xml}"
+
+[tool.hatch.envs.style]
+description = """Check the style of the codebase."""
+dependencies = [
+    "pydoclint",
+    "pre-commit",
+]
+detached = true
+
+[tool.hatch.envs.style.scripts]
+check = ["pre-commit run --all-files"]
+
+[tool.hatch.envs.audit]
+description = """Check dependencies for security vulnerabilities."""
+extra-dependencies = [
+    "pip-audit",
+]
+
+[tool.hatch.envs.audit.scripts]
+check = ["pip-audit --skip-editable"]
+
+[tool.hatch.envs.types]
+description = """Check the static types of the codebase."""
+dependencies = [
+    "mypy",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.hatch.envs.types.scripts]
+check = "mypy src/jupyterhub_cost_monitoring"
+
+[tool.hatch.envs.docs]
+description = """Build or serve the documentation."""
+python = "3.14"
+dependencies = [
+    "mystmd",
+]
+detached = true
+
+[tool.hatch.envs.docs.scripts]
+build = ["env -C docs -- myst build --html"]
+serve = ["env -C docs -- myst start"]
