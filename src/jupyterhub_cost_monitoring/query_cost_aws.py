@@ -122,7 +122,7 @@ def query_total_costs(date_range: DateRange):
 
 
 @ttl_lru_cache(seconds_to_live=3600)
-def _query_total_costs(date_range: DateRange, add_attributable_costs_filter):
+def _query_total_costs(date_range: DateRange, add_attributable_costs_filter: bool):
     """
     Internal function to query total costs from AWS Cost Explorer.
 
@@ -219,7 +219,9 @@ def query_total_costs_per_hub(date_range: DateRange):
     return processed_response
 
 
-def _process_home_storage_costs(entries_by_date, home_storage_ebs_cost_response):
+def _process_home_storage_costs(
+    entries_by_date: dict, home_storage_ebs_cost_response: dict
+):
     """
     Helper function to get home storage costs and deduct this from the compute component costs.
     This is because EBS volumes are included in the EC2 - Other service, which is mapped to the
@@ -321,7 +323,7 @@ def _create_base_filter() -> dict:
     }
 
 
-def _process_core_costs(entries_by_date, core_cost_response):
+def _process_core_costs(entries_by_date: dict, core_cost_response: dict):
     """
     Helper function to get core infrastructure costs and deduct this from compute costs.
 
@@ -640,6 +642,9 @@ def query_total_costs_per_group(
 
     Returns:
         List of dicts with keys: date, usergroup and cost.
+
+    Raises:
+        HTTPException: If there is failure to connect to cloud provider or Prometheus services.
     """
     try:
         results = query_total_costs_per_user(date_range=date_range)

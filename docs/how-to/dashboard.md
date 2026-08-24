@@ -41,7 +41,7 @@ You can interact with the dashboards in several ways:
 - **Legend**: click on user names in the legend to isolate or hide specific users in the graphs. You can select multiple users by holding down the `Shift` key while clicking, and double-click to reset the selection.
 - **Tooltips**: hover over data points in the graphs to see detailed information, including exact cost values and timestamps of each user.
 
-:::{tip}
+:::\{tip}
 Some interactions may re-trigger additional queries to fetch data, so there may be a slight delay while the graph is updated.
 :::
 

@@ -47,7 +47,7 @@ local bg = grafonnet.panel.barGauge;
       })
       + var.query.selectionOptions.withIncludeAll(value=true)
       + var.query.selectionOptions.withMulti(value=true)
-      + var.query.refresh.onTime(),    
+      + var.query.refresh.onTime(),
     hub_user:
       var.query.new(
         'hub_user',
@@ -102,7 +102,7 @@ local bg = grafonnet.panel.barGauge;
       + var.query.refresh.onTime(),
     usergroup:
       var.query.new(
-        'usergroup', 
+        'usergroup',
         query='label_values(jupyterhub_user_group_info,usergroup)')
       + var.query.withDatasource(
         type='prometheus',
@@ -203,7 +203,7 @@ local bg = grafonnet.panel.barGauge;
     $.queryComponentTarget + {
       url: 'http://jupyterhub-cost-monitoring.support.svc.cluster.local/total-costs-per-component?from=${__from:date}&to=${__to:date}' + '&component=networking',
       refid: 'networking',
-    },    
+    },
   ],
 
   queryComponentHubArray: [
@@ -226,7 +226,7 @@ local bg = grafonnet.panel.barGauge;
     $.queryComponentTarget + {
       url: 'http://jupyterhub-cost-monitoring.support.svc.cluster.local/total-costs-per-component?from=${__from:date}&to=${__to:date}' + '&component=networking' + '&hub=$hub_general',
       refid: 'networking',
-    },    
+    },
   ],
 
   queryUsersTarget: {

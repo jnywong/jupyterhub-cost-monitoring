@@ -79,6 +79,9 @@ def query_usage(
         hub_name: Optional name of the hub to filter results.
         component_name: Optional name of the component to filter results.
         user_name: Optional name of the user to filter results.
+
+    Returns:
+        result: Dictionary of daily usage cost factors.
     """
     result = []
     if component_name is None:

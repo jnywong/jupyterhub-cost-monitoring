@@ -69,6 +69,6 @@ Cost data is exposed with `jupyterhub-cost-monitoring` via FastAPI that can be c
 
 Reference documentation is available at the `/docs` FastAPI endpoint.
 
-:::{note}
+:::\{note}
 For a detailed explanation of how costs are calculated and attributed, please refer to the [Cost Calculations](cost-calculations.md) page.
 :::

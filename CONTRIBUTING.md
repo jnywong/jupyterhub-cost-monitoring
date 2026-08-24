@@ -8,9 +8,9 @@ This project uses the Python package manager `uv`. Below are the steps to set up
 
 1. Clone this repository
 
-  ```bash
-  git clone https://github.com/2i2c-org/jupyterhub-cost-monitoring.git
-  ```
+```bash
+git clone https://github.com/2i2c-org/jupyterhub-cost-monitoring.git
+```
 
 1. Install `uv`
 
@@ -27,12 +27,12 @@ This project uses the Python package manager `uv`. Below are the steps to set up
 
 1. Authenticate with [AWS credentials](https://docs.aws.amazon.com/cli/v1/userguide/cli-configure-files.html) (requires [AWS CLI installation](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)). This example uses a [session token](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) from an MFA code associated with an MFA device:
 
-  ```bash
-  export AWS_PROFILE=<aws-profile-name>
-  export CLUSTER_NAME=<cluster-name>
-  export MFA_DEVICE_ID=<mfa-device-id>
-  aws sts get-session-token --serial-number $MFA_DEVICE_ID --profile $AWS_PROFILE --token-code ******
-  ```
+```bash
+export AWS_PROFILE=<aws-profile-name>
+export CLUSTER_NAME=<cluster-name>
+export MFA_DEVICE_ID=<mfa-device-id>
+aws sts get-session-token --serial-number $MFA_DEVICE_ID --profile $AWS_PROFILE --token-code ******
+```
 
 1. Run the FastAPI web server
 

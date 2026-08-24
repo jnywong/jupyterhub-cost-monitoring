@@ -32,8 +32,9 @@ Manually install the Grafonnet jsonnet library:
 To render the jsonnet templates, which is useful during development, you
 can:
 
-1. Clone the  [jupyterhub/grafana-dashboards](https://github.com/jupyterhub/grafana-dashboards) repository
-2. Change directory to the `grafana-dashboards` cloned repo, and then run:
+1. Clone the [jupyterhub/grafana-dashboards](https://github.com/jupyterhub/grafana-dashboards) repository
+
+1. Change directory to the `grafana-dashboards` cloned repo, and then run:
 
    ```bash
    jsonnet -J vendor /path/to/jupyterhub-cost-monitoring/dashboards/cloud-cost-aws.jsonnet
@@ -45,4 +46,3 @@ These dashboards are deployed using a Python `deploy.py` script from [jupyterhub
 
 Running this command has a pre-requisite that you have jsonnet installed,
 specifically the jsonnet binary built using golang called go-jsonnet.
-

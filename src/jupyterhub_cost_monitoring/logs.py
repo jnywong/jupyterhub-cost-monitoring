@@ -8,12 +8,12 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(format=LOG_FORMAT, level=LOG_LEVEL)
 
 
-def get_logger(name):
+def get_logger(name: str):
     """
     Get a logger with the specified name.
 
     Args:
-        name (str): The name of the logger.
+        name: The name of the logger.
 
     Returns:
         logging.Logger: A logger instance with the specified name.

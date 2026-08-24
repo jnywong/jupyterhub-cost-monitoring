@@ -264,18 +264,22 @@ def costs_per_user(
     2. Getting usage fractions per user from Prometheus metrics
     3. Multiplying total costs by each user's usage fraction
 
-    Query Parameters:
-        from (str): Start date in YYYY-MM-DD format (defaults to 30 days ago)
-        to (str): End date in YYYY-MM-DD format (defaults to current date)
-        hub (str, optional): Filter to specific hub namespace
-        component (str, optional): Filter to specific component (compute, home storage)
-        user (str, optional): Filter to specific user
-        usergroup (str, optional): Filter to specific user group
-        limit (int, optional): Limit number of results to top N users by total cost.
+    Args:
+        from_date: Start date in YYYY-MM-DD format (defaults to 30 days ago)
+        to_date: End date in YYYY-MM-DD format (defaults to current date)
+        hub: Filter to specific hub namespace
+        component: Filter to specific component (compute, home storage)
+        user: Filter to specific user
+        usergroup: Filter to specific user group
+        limit: Limit number of results to top N users by total cost.
 
     Returns:
         List of dicts with keys: date, hub, component, user, value (cost in USD)
         Results are sorted by date, hub, component, then value (highest cost first)
+
+    Raises:
+        HTTPException: If there is failure to connect to cloud provider or Prometheus services.
+
     """
     # Parse and validate date parameters into DateRange object
     date_range = parse_from_to_in_query_params(from_date, to_date)

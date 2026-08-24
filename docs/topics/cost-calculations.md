@@ -31,7 +31,7 @@ Cost factors are calculated as a decimal fraction of the total usage of that res
 
 The cost factor from `/total-usage` is then multiplied by the total cost of that component to determine the user cost.
 
-For example, if the total cost of compute for a given day is \$100 and a user has a cost factor of 0.04 for the compute component, then the cost attributed to that user for memory is $4.
+For example, if the total cost of compute for a given day is \$100 and a user has a cost factor of 0.04 for the compute component, then the cost attributed to that user for memory is \$4.
 
 ### User cost caveats
 
@@ -44,7 +44,7 @@ The proportional usage described above does not take into account the underutili
 
 Group-level costs are calculated by aggregating the user-level costs for all users within a group. Each entry in the [`/costs-per-user`](#id-costs-per-user) endpoint includes a `usergroup` key that indicates the group which the user belongs.
 
-:::{note}
+:::\{note}
 Only user group memberships from the most recent dates are considered. Historical user group memberships incur a heavy performance penalty.
 :::
 
@@ -66,6 +66,6 @@ This lists all users with no group memberships. This is useful for identifying u
 
 The cost monitoring application cannot make any assumptions for which group costs are accounted for when a user is a member of multiple groups. Therefore, costs incurred by users who belong to multiple groups are double-counted by default in the group cost calculations.
 
-:::{tip} Example – double counting
+:::\{tip} Example – double counting
 If user A belongs to both group X and group Y, then the costs attributed to user A will be included in the total group costs for both group X and group Y.
 :::

@@ -17,20 +17,20 @@ def test_cost_factor_by_hub(input_data_usage, output_data_hub):
     df_output = df_output.rename(columns={"cost_factor": "value"})
     logger.debug(f"Result: \n{df_result}")
     logger.debug(f"Output: \n{df_output}")
-    assert len(df_result) == len(df_output), (
-        "Result length does not match expected output length"
-    )
-    assert pd.testing.assert_frame_equal(df_result, df_output) is None, (
-        "Cost factors do not match expected output"
-    )
+    assert len(df_result) == len(
+        df_output
+    ), "Result length does not match expected output length"
+    assert (
+        pd.testing.assert_frame_equal(df_result, df_output) is None
+    ), "Cost factors do not match expected output"
     df_result = (
         df_result.drop(columns=["user"])
         .groupby(["date", "component", "hub"], as_index=False, observed=True)
         .sum()
     )
-    assert df_result["value"].all() == 1.0, (
-        "Cost factors do not sum to 1 for each date/component/hub grouping"
-    )
+    assert (
+        df_result["value"].all() == 1.0
+    ), "Cost factors do not sum to 1 for each date/component/hub grouping"
 
 
 def test_cost_factor_by_component(input_data_usage, output_data_component):
@@ -47,17 +47,17 @@ def test_cost_factor_by_component(input_data_usage, output_data_component):
     df_output = df_output.rename(columns={"cost_factor": "value"})
     logger.debug(f"Result: \n{df_result}")
     logger.debug(f"Output: \n{df_output}")
-    assert len(df_result) == len(df_output), (
-        "Result length does not match expected output length"
-    )
-    assert pd.testing.assert_frame_equal(df_result, df_output) is None, (
-        "Cost factors do not match expected output"
-    )
+    assert len(df_result) == len(
+        df_output
+    ), "Result length does not match expected output length"
+    assert (
+        pd.testing.assert_frame_equal(df_result, df_output) is None
+    ), "Cost factors do not match expected output"
     df_result = (
         df_result.drop(columns=["user"])
         .groupby(["date", "component"], as_index=False, observed=True)
         .sum()
     )
-    assert df_result["value"].all() == 1.0, (
-        "Cost factors do not sum to 1 for each date/component grouping"
-    )
+    assert (
+        df_result["value"].all() == 1.0
+    ), "Cost factors do not sum to 1 for each date/component grouping"
