@@ -47,11 +47,6 @@ dependencies = [
 "Bug Tracker" = "https://github.com/2i2c-org/jupyterhub-cost-monitoring/issues"
 "Documentation" = "https://jupyterhub-cost-monitoring.readthedocs.io/en/latest/"
 
-[project.optional-dependencies]
-dev = [
-    "ipython~=9.12"
-]
-
 ################################################################################
 # Tool Configuration
 ################################################################################
@@ -159,7 +154,9 @@ inherits = ["default"]
 description = """
 Environment for local development.
 """
-features = ["dev"]
+
+[tool.hatch.envs.dev.scripts]
+serve = "fastapi dev src/jupyterhub_cost_monitoring/app.py --port 8080"
 
 [tool.hatch.envs.release]
 inherits = ["default"]
