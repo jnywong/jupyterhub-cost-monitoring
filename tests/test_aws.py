@@ -1,7 +1,6 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List
 
 import pytest
 from pytest_httpserver import HTTPServer
@@ -15,7 +14,7 @@ def aws_date_range() -> DateRange:
     return DateRange(datetime(2026, 6, 20), datetime(2026, 6, 27))
 
 
-def setup_mock_ce(httpserver: HTTPServer, responses: Path | List[Path]):
+def setup_mock_ce(httpserver: HTTPServer, responses: Path | list[Path]):
 
     aws_endpoint_url = f"http://{httpserver.host}:{httpserver.port}/"
     ce = AWSCostExplorer(
