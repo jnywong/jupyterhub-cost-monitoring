@@ -646,9 +646,7 @@ def query_total_costs_per_group(
     except (ClientError, BotoCoreError) as e:
         raise HTTPException(status_code=500, detail=f"{e}")
     except RequestException as e:
-        raise HTTPException(
-            status_code=e.response.status_code, detail=f"{e.response.text}"
-        )
+        raise HTTPException(status_code=500, detail=f"{e}")
     response = {}
     for r in results:
         key = (r["date"], r["usergroup"])
