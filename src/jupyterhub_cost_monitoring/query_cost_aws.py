@@ -136,6 +136,7 @@ def _query_total_costs(date_range: DateRange, add_attributable_costs_filter: boo
     Returns:
         List of cost entries with 'date', 'cost', and 'name' fields
     """
+    filter: dict = {}
     if add_attributable_costs_filter:
         name = "attributable"
         filter = {
@@ -423,7 +424,7 @@ def query_total_costs_per_component(
 
     for e in response["ResultsByTime"]:
         # coalesce service costs to component costs
-        component_costs = {}
+        component_costs: dict = {}
         for g in e["Groups"]:
             service_name = g["Keys"][0]
             component_name = _get_component_name(service_name)
@@ -451,7 +452,7 @@ def query_total_costs_per_component(
         )
 
     # Create index for faster lookups by date and component name
-    entries_by_date = {}
+    entries_by_date: dict = {}
     for entry in processed_response:
         date = entry["date"]
         if date not in entries_by_date:
@@ -551,7 +552,7 @@ def query_total_costs_per_user(
     # Get AWS cost data using the DateRange object
     costs_per_component = query_total_costs_per_component(date_range, hub, component)
 
-    costs_by_date = {}
+    costs_by_date: dict = {}
     for entry in costs_per_component:
         costs_by_date.setdefault(entry["date"], {})[entry["component"]] = float(
             entry["cost"]
@@ -611,13 +612,13 @@ def query_total_costs_per_user(
                 r["usergroup"] = "none"
     results.extend(list_groups)
     if limit:
-        limit = int(limit)
-        user_costs = {}
+        int_limit = int(limit)
+        user_costs: dict = {}
         for entry in results:
             user_costs[entry["user"]] = (
                 user_costs.get(entry["user"], 0) + entry["value"]
             )
-        top_users = sorted(user_costs.items(), key=lambda x: -x[1])[:limit]
+        top_users = sorted(user_costs.items(), key=lambda x: -x[1])[:int_limit]
         top_user_set = {user for user, _ in top_users}
         logger.debug(f"Top users: {top_users}")
         results = [entry for entry in results if entry["user"] in top_user_set]
@@ -652,7 +653,7 @@ def query_total_costs_per_group(
         raise HTTPException(status_code=500, detail=f"{e}")
     except RequestException as e:
         raise HTTPException(status_code=500, detail=f"{e}")
-    response = {}
+    response: dict = {}
     for r in results:
         key = (r["date"], r["usergroup"])
         logger.debug(f"Key: {key}, Value: {r['value']}")

@@ -23,7 +23,7 @@ prometheus_username = os.environ.get("PROMETHEUS_USERNAME", "")
 prometheus_password = os.environ.get("PROMETHEUS_PASSWORD", "")
 
 
-def query_prometheus(query: str, date_range: DateRange, step: str) -> requests.Response:
+def query_prometheus(query: str, date_range: DateRange, step: str) -> dict:
     """
     Query the Prometheus server with the given query over a date range.
 
@@ -54,7 +54,9 @@ def query_prometheus(query: str, date_range: DateRange, step: str) -> requests.R
         "step": step,
     }
     query_api = URL(prometheus_api.with_path("/api/v1/query_range"))
-    with requests.get(query_api, params=parameters, auth=prometheus_auth) as response:
+    with requests.get(
+        str(query_api), params=parameters, auth=prometheus_auth
+    ) as response:
         logger.info(f"Querying Prometheus: {response.url}")
         response.raise_for_status()
         result = response.json()
@@ -83,7 +85,7 @@ def query_usage(
     Returns:
         result: Dictionary of daily usage cost factors.
     """
-    result = []
+    result: list = []
     if component_name is None:
         # Query all components defined in USAGE_MAP
         for component, params in USAGE_MAP.items():
@@ -108,9 +110,9 @@ def query_usage(
 
 
 def _process_response(
-    response: requests.Response,
+    response: dict,
     component_name: str,
-) -> dict:
+) -> list:
     """
     Process the response from the Prometheus server to extract absolute usage data.
 
@@ -119,7 +121,7 @@ def _process_response(
 
     If the component_name is home storage, then rename the escaped username used for the directory to the unescaped version.
     """
-    result = []
+    result: list = []
     for data in response["data"]["result"]:
         hub = data["metric"]["namespace"]
         user = data["metric"]["username"]
@@ -187,7 +189,7 @@ def _sum_absolute_usage_by_date(result: list[dict]) -> list[dict]:
     The Prometheus queries can return multiple absolute usage values per day.
     We sum across all entries within each date to get the total daily usage for each user.
     """
-    sums = defaultdict(float)
+    sums: dict = defaultdict(float)
 
     for entry in result:
         key = (
@@ -225,7 +227,8 @@ def _calculate_daily_cost_factors(
     This ensures that cost factors sum to 1 for the appropriate grouping.
     """
     # Calculate total usage for the appropriate grouping
-    totals = defaultdict(float)
+    totals: dict = defaultdict(float)
+    key: tuple[str, ...]
     for entry in result:
         if hub_name is None:
             # When no specific hub requested, calculate totals across all hubs
@@ -269,7 +272,7 @@ def query_user_groups(
 
 
 def _process_user_groups(
-    response: requests.Response,
+    response: dict,
     hub_name: str | None = None,
     user_name: str | None = None,
     group_name: str | None = None,
@@ -305,8 +308,7 @@ def query_users_with_multiple_groups(
     user_name: str | None = None,
 ) -> list[dict]:
     response = query_user_groups(hub_name=hub_name, user_name=user_name)
-
-    grouped = defaultdict(
+    grouped: dict = defaultdict(
         lambda: {"username": None, "hub": None, "usergroups": [], "has_multiple": False}
     )
     for entry in response:
@@ -336,7 +338,9 @@ def query_users_with_no_groups(
     user_name: str | None = None,
 ) -> list[dict]:
     response = query_user_groups(hub_name=hub_name, user_name=user_name)
-    grouped = defaultdict(lambda: {"username": None, "hub": None})
+    grouped: dict = defaultdict(
+        lambda: {"username": None, "hub": None, "has_none": bool}
+    )
     for entry in response:
         key = (entry["username"], entry["hub"])
         if grouped[key]["username"] is None:

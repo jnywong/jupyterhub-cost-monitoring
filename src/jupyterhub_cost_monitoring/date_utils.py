@@ -140,26 +140,26 @@ def parse_from_to_in_query_params(
 
     # Parse and set defaults for date parameters
     if to_date:
-        to_date = ensure_utc_datetime(to_date)
+        parsed_to_date = ensure_utc_datetime(to_date)
     else:
-        to_date = now_date
+        parsed_to_date = now_date
 
     if from_date:
-        from_date = ensure_utc_datetime(from_date)
+        parsed_from_date = ensure_utc_datetime(from_date)
     else:
         # Default to 30 days prior to end date
-        from_date = to_date - timedelta(days=30)
+        parsed_from_date = parsed_to_date - timedelta(days=30)
 
     # Apply validation rules to prevent API errors
 
     # Prevent "end date past the beginning of next month" errors from AWS
-    to_date = min(to_date, now_date)
+    parsed_to_date = min(parsed_to_date, now_date)
 
     # Prevent "Start date (and hour) should be before end date (and hour)" errors
-    if from_date >= now_date:
-        from_date = to_date - timedelta(days=1)
+    if parsed_from_date >= now_date:
+        parsed_from_date = parsed_to_date - timedelta(days=1)
 
-    return DateRange(start_date=from_date, end_date=to_date)
+    return DateRange(start_date=parsed_from_date, end_date=parsed_to_date)
 
 
 def get_now_date():
