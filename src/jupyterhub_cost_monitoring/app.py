@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import timedelta
 
 import requests
@@ -284,7 +285,7 @@ def costs_per_user(
     # Parse and validate date parameters into DateRange object
     date_range = parse_from_to_in_query_params(from_date, to_date)
     if usergroup:
-        usergroup_list = usergroup.strip("{}").split(",")
+        usergroup_list: Sequence[str | None] = usergroup.strip("{}").split(",")
 
     if not hub or hub.lower() == "all":
         hub = None
@@ -294,7 +295,7 @@ def costs_per_user(
         user = None
     if not limit or (str(limit).lower() == "all"):
         limit = None
-    if not usergroup or ("all" in [u.lower() for u in usergroup_list]):
+    if not usergroup or ("all" in [u.lower() for u in usergroup_list]):  # type: ignore
         usergroup_list = [None]
 
     # Get per-user costs by combining AWS costs with Prometheus usage data
