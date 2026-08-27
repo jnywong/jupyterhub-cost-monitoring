@@ -1,1 +1,16 @@
-.venv
+chartpress.yaml
+coverage.xml
+dev-requirements.txt
+helm/
+venv/
+tests/
+.coverage
+.editorconfig
+.flake8
+.git
+.github
+.gitignore
+.mypy_cache
+.pre-commit-config.yaml
+.pytest_cache
+.venv/
