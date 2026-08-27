@@ -6,20 +6,16 @@ import pandas as pd
 
 
 def generate_test_data(
-    hubs: list | None,
-    components: list | None,
     data_type: str = Literal["usage", "cost"],
     from_date: str = "2025-01-01",
     to_date: str = "2025-01-02",
+    hubs: list[str] = ["staging", "prod"],
+    components: list[str] = ["compute", "home storage"],
     n_users: int | None = 3,
 ) -> None:
     """
     Generate test data.
     """
-    if not hubs:
-        hubs = ["staging", "prod"]
-    if not components:
-        components = ["compute", "home storage"]
     if data_type == "usage":
         users = [f"user_{i}" for i in range(n_users)]
         factor = 1e1
