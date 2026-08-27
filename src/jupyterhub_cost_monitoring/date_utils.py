@@ -3,7 +3,7 @@ Utility functions for date and timezone handling.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 def ensure_utc_datetime(date_str: str) -> datetime:
@@ -19,10 +19,10 @@ def ensure_utc_datetime(date_str: str) -> datetime:
     dt = datetime.fromisoformat(date_str)
     if dt.tzinfo is None:
         # Assume UTC if no timezone provided
-        dt = dt.replace(tzinfo=UTC)
+        dt = dt.replace(tzinfo=timezone.utc)
     else:
         # Convert to UTC if timezone-aware
-        dt = dt.astimezone(UTC)
+        dt = dt.astimezone(timezone.utc)
     return dt
 
 
@@ -153,7 +153,8 @@ def parse_from_to_in_query_params(
     # Apply validation rules to prevent API errors
 
     # Prevent "end date past the beginning of next month" errors from AWS
-    to_date = min(to_date, now_date)
+    if to_date > now_date:
+        to_date = now_date
 
     # Prevent "Start date (and hour) should be before end date (and hour)" errors
     if from_date >= now_date:
@@ -164,5 +165,7 @@ def parse_from_to_in_query_params(
 
 def get_now_date():
     """Get current date at midnight UTC for consistent date boundaries"""
-    now_date = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    now_date = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     return now_date

@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 import requests
-from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
@@ -60,7 +59,7 @@ def hub_names(
 
     try:
         return query_hub_names(date_range)
-    except (ClientError, BotoCoreError) as e:
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
 
 
@@ -69,8 +68,10 @@ def component_names():
     """
     Endpoint to serve component names.
     """
-
-    return list(USAGE_MAP.keys())
+    try:
+        return list(USAGE_MAP.keys())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
 
 
 @app.get("/total-costs")
@@ -90,7 +91,7 @@ def total_costs(
 
     try:
         return query_total_costs(date_range)
-    except (ClientError, BotoCoreError) as e:
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
 
 
@@ -110,8 +111,13 @@ def user_groups(
 
     try:
         return query_user_groups(hub, username, usergroup)
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"{e}") from e
+    except requests.exceptions.HTTPError as e:
+        response = e.response
+        raise HTTPException(
+            status_code=response.status_code, detail=f"{response.text}"
+        ) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
 
 
 @app.get("/users-with-multiple-groups")
@@ -135,8 +141,13 @@ def users_with_multiple_groups(
 
     try:
         return query_users_with_multiple_groups(date_range, hub_name, user_name)
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"{e}") from e
+    except requests.exceptions.HTTPError as e:
+        response = e.response
+        raise HTTPException(
+            status_code=response.status_code, detail=f"{response.text}"
+        ) from e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
 
 
 @app.get("/users-with-no-groups")
@@ -160,7 +171,12 @@ def users_with_no_groups(
 
     try:
         return query_users_with_no_groups(date_range, hub_name, user_name)
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.HTTPError as e:
+        response = e.response
+        raise HTTPException(
+            status_code=response.status_code, detail=f"{response.text}"
+        ) from e
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}") from e
 
 
@@ -181,7 +197,7 @@ def total_costs_per_hub(
 
     try:
         return query_total_costs_per_hub(date_range)
-    except (ClientError, BotoCoreError) as e:
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
 
 
@@ -211,7 +227,7 @@ def total_costs_per_component(
 
     try:
         return query_total_costs_per_component(date_range, hub, component)
-    except (ClientError, BotoCoreError) as e:
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
 
 
@@ -232,7 +248,10 @@ def total_costs_per_group(
 
     try:
         return query_total_costs_per_group(date_range)
-    except (ClientError, BotoCoreError, requests.exceptions.RequestException) as e:
+    except requests.exceptions.HTTPError as e:
+        response = e.response
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"{e}")
 
 
@@ -300,7 +319,10 @@ def costs_per_user(
             per_user_costs = query_total_costs_per_user(
                 date_range, hub, component, user, ug, limit
             )
-        except (ClientError, BotoCoreError, requests.exceptions.RequestException) as e:
+        except requests.exceptions.HTTPError as e:
+            response = e.response
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        except Exception as e:
             raise HTTPException(status_code=500, detail=f"{e}")
         results.extend(per_user_costs)
 
@@ -339,7 +361,10 @@ def total_usage(
     try:
         return query_usage(date_range, hub, component, user)
     except requests.exceptions.HTTPError as e:
-        raise HTTPException(status_code=500, detail=e) from e
+        response = e.response
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
 
 
 @app.get("/metrics")

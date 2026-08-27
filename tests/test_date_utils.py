@@ -5,7 +5,7 @@ Tests cover UTC conversion, DateRange functionality, date parsing,
 API-specific formatting, and caching integration.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -24,43 +24,45 @@ class TestEnsureUTCDateTime:
     def test_timezone_naive_string_assumes_utc(self):
         """Test that timezone-naive strings are assumed to be UTC."""
         result = ensure_utc_datetime("2025-01-15")
-        expected = datetime(2025, 1, 15, tzinfo=UTC)
+        expected = datetime(2025, 1, 15, tzinfo=timezone.utc)
         assert result == expected
-        assert result.tzinfo == UTC
+        assert result.tzinfo == timezone.utc
 
     def test_timezone_aware_string_converts_to_utc(self):
         """Test that timezone-aware strings are converted to UTC."""
         # Test with EST (UTC-5)
         result = ensure_utc_datetime("2025-01-15T10:00:00-05:00")
-        expected = datetime(2025, 1, 15, 15, 0, 0, tzinfo=UTC)  # 10 AM EST = 3 PM UTC
+        expected = datetime(
+            2025, 1, 15, 15, 0, 0, tzinfo=timezone.utc
+        )  # 10 AM EST = 3 PM UTC
         assert result == expected
-        assert result.tzinfo == UTC
+        assert result.tzinfo == timezone.utc
 
     def test_iso_formats(self):
         """Test various ISO format inputs."""
         test_cases = [
-            ("2025-01-15", datetime(2025, 1, 15, tzinfo=UTC)),
-            ("2025-01-15T00:00:00", datetime(2025, 1, 15, tzinfo=UTC)),
+            ("2025-01-15", datetime(2025, 1, 15, tzinfo=timezone.utc)),
+            ("2025-01-15T00:00:00", datetime(2025, 1, 15, tzinfo=timezone.utc)),
             (
                 "2025-01-15T12:30:45",
-                datetime(2025, 1, 15, 12, 30, 45, tzinfo=UTC),
+                datetime(2025, 1, 15, 12, 30, 45, tzinfo=timezone.utc),
             ),
             # Z suffix indicates UTC timezone (Zulu time)
             (
                 "2025-01-15T12:30:45Z",
-                datetime(2025, 1, 15, 12, 30, 45, tzinfo=UTC),
+                datetime(2025, 1, 15, 12, 30, 45, tzinfo=timezone.utc),
             ),
         ]
 
         for input_str, expected in test_cases:
             result = ensure_utc_datetime(input_str)
             assert result == expected
-            assert result.tzinfo == UTC
+            assert result.tzinfo == timezone.utc
 
     def test_utc_string_unchanged(self):
         """Test that UTC strings remain unchanged."""
         result = ensure_utc_datetime("2025-01-15T12:00:00+00:00")
-        expected = datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC)
+        expected = datetime(2025, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
         assert result == expected
 
     def test_different_timezones(self):
@@ -69,17 +71,17 @@ class TestEnsureUTCDateTime:
             # PST (UTC-8) to UTC
             (
                 "2025-01-15T08:00:00-08:00",
-                datetime(2025, 1, 15, 16, 0, 0, tzinfo=UTC),
+                datetime(2025, 1, 15, 16, 0, 0, tzinfo=timezone.utc),
             ),
             # JST (UTC+9) to UTC
             (
                 "2025-01-15T18:00:00+09:00",
-                datetime(2025, 1, 15, 9, 0, 0, tzinfo=UTC),
+                datetime(2025, 1, 15, 9, 0, 0, tzinfo=timezone.utc),
             ),
             # CET (UTC+1) to UTC
             (
                 "2025-01-15T13:00:00+01:00",
-                datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC),
+                datetime(2025, 1, 15, 12, 0, 0, tzinfo=timezone.utc),
             ),
         ]
 
@@ -93,8 +95,8 @@ class TestDateRange:
 
     def test_daterange_creation(self):
         """Test basic DateRange object creation."""
-        start = datetime(2025, 1, 1, tzinfo=UTC)
-        end = datetime(2025, 1, 31, tzinfo=UTC)
+        start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        end = datetime(2025, 1, 31, tzinfo=timezone.utc)
         dr = DateRange(start_date=start, end_date=end)
 
         assert dr.start_date == start
@@ -102,21 +104,21 @@ class TestDateRange:
 
     def test_daterange_immutability(self):
         """Test that DateRange is immutable (frozen dataclass)."""
-        start = datetime(2025, 1, 1, tzinfo=UTC)
-        end = datetime(2025, 1, 31, tzinfo=UTC)
+        start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        end = datetime(2025, 1, 31, tzinfo=timezone.utc)
         dr = DateRange(start_date=start, end_date=end)
 
         # Attempting to modify should raise AttributeError
         with pytest.raises(AttributeError):
-            dr.start_date = datetime(2025, 2, 1, tzinfo=UTC)
+            dr.start_date = datetime(2025, 2, 1, tzinfo=timezone.utc)
 
         with pytest.raises(AttributeError):
-            dr.end_date = datetime(2025, 2, 28, tzinfo=UTC)
+            dr.end_date = datetime(2025, 2, 28, tzinfo=timezone.utc)
 
     def test_daterange_hashability(self):
         """Test that DateRange objects are hashable and can be used as dict keys."""
-        start = datetime(2025, 1, 1, tzinfo=UTC)
-        end = datetime(2025, 1, 31, tzinfo=UTC)
+        start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        end = datetime(2025, 1, 31, tzinfo=timezone.utc)
 
         dr1 = DateRange(start_date=start, end_date=end)
         dr2 = DateRange(start_date=start, end_date=end)
@@ -130,20 +132,22 @@ class TestDateRange:
 
     def test_daterange_equality(self):
         """Test DateRange equality comparison."""
-        start = datetime(2025, 1, 1, tzinfo=UTC)
-        end = datetime(2025, 1, 31, tzinfo=UTC)
+        start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        end = datetime(2025, 1, 31, tzinfo=timezone.utc)
 
         dr1 = DateRange(start_date=start, end_date=end)
         dr2 = DateRange(start_date=start, end_date=end)
-        dr3 = DateRange(start_date=start, end_date=datetime(2025, 2, 1, tzinfo=UTC))
+        dr3 = DateRange(
+            start_date=start, end_date=datetime(2025, 2, 1, tzinfo=timezone.utc)
+        )
 
         assert dr1 == dr2
         assert dr1 != dr3
 
     def test_aws_range_formatting(self):
         """Test AWS date range formatting (exclusive end date, YYYY-MM-DD format)."""
-        start = datetime(2025, 1, 15, 12, 30, 45, tzinfo=UTC)
-        end = datetime(2025, 1, 31, 8, 15, 30, tzinfo=UTC)
+        start = datetime(2025, 1, 15, 12, 30, 45, tzinfo=timezone.utc)
+        end = datetime(2025, 1, 31, 8, 15, 30, tzinfo=timezone.utc)
         dr = DateRange(start_date=start, end_date=end)
 
         aws_from, aws_to = dr.aws_range
@@ -155,8 +159,8 @@ class TestDateRange:
 
     def test_prometheus_range_formatting(self):
         """Test Prometheus date range formatting (inclusive dates, ISO format)."""
-        start = datetime(2025, 1, 15, 12, 30, 45, tzinfo=UTC)
-        end = datetime(2025, 1, 31, 8, 15, 30, tzinfo=UTC)
+        start = datetime(2025, 1, 15, 12, 30, 45, tzinfo=timezone.utc)
+        end = datetime(2025, 1, 31, 8, 15, 30, tzinfo=timezone.utc)
         dr = DateRange(start_date=start, end_date=end)
 
         prom_from, prom_to = dr.prometheus_range
@@ -168,8 +172,8 @@ class TestDateRange:
     def test_same_logical_range_different_formats(self):
         """Test that AWS and Prometheus formats represent the same logical date range."""
         # Create range for January 1-31, 2025
-        start = datetime(2025, 1, 1, tzinfo=UTC)
-        end = datetime(2025, 1, 31, 23, 59, 59, tzinfo=UTC)
+        start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        end = datetime(2025, 1, 31, 23, 59, 59, tzinfo=timezone.utc)
         dr = DateRange(start_date=start, end_date=end)
 
         aws_from, aws_to = dr.aws_range
@@ -191,11 +195,9 @@ class TestParseDateRangeParams:
         """Test default 30-day range behavior."""
         with patch("src.jupyterhub_cost_monitoring.date_utils.datetime") as mock_dt:
             # Mock current time as 2025-02-15 midnight UTC
-            mock_now = datetime(2025, 2, 15, tzinfo=UTC)
+            mock_now = datetime(2025, 2, 15, tzinfo=timezone.utc)
             mock_dt.now.return_value = mock_now
-            mock_dt.side_effect = lambda *args, **kwargs: datetime(
-                *args, tzinfo=UTC, **kwargs
-            )
+            mock_dt.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
 
             result = parse_from_to_in_query_params()
 
@@ -216,10 +218,10 @@ class TestParseDateRangeParams:
 
         # Should be converted to UTC
         expected_start = datetime(
-            2025, 1, 1, 15, 0, 0, tzinfo=UTC
+            2025, 1, 1, 15, 0, 0, tzinfo=timezone.utc
         )  # 10 AM EST = 3 PM UTC
         expected_end = datetime(
-            2025, 1, 31, 13, 0, 0, tzinfo=UTC
+            2025, 1, 31, 13, 0, 0, tzinfo=timezone.utc
         )  # 3 PM CET = 1 PM UTC
 
         assert result.start_date == expected_start
@@ -240,8 +242,8 @@ class TestCacheIntegration:
             call_count += 1
             return f"Result for {date_range.start_date.date()}"
 
-        start = datetime(2025, 1, 1, tzinfo=UTC)
-        end = datetime(2025, 1, 31, tzinfo=UTC)
+        start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        end = datetime(2025, 1, 31, tzinfo=timezone.utc)
 
         dr1 = DateRange(start_date=start, end_date=end)
         dr2 = DateRange(start_date=start, end_date=end)  # Identical range
@@ -265,12 +267,12 @@ class TestCacheIntegration:
             call_count += 1
             return f"Call #{call_count} for {date_range.start_date.date()}"
 
-        start1 = datetime(2025, 1, 1, tzinfo=UTC)
-        end1 = datetime(2025, 1, 31, tzinfo=UTC)
+        start1 = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        end1 = datetime(2025, 1, 31, tzinfo=timezone.utc)
         january_range = DateRange(start_date=start1, end_date=end1)
 
-        start2 = datetime(2025, 2, 1, tzinfo=UTC)
-        end2 = datetime(2025, 2, 28, tzinfo=UTC)
+        start2 = datetime(2025, 2, 1, tzinfo=timezone.utc)
+        end2 = datetime(2025, 2, 28, tzinfo=timezone.utc)
         february_range = DateRange(start_date=start2, end_date=end2)
 
         result1 = cached_function(january_range)
@@ -291,12 +293,12 @@ class TestCacheIntegration:
             return f"Call #{call_count} for {date_range.start_date.date()}"
 
         # Same dates but different times
-        start1 = datetime(2025, 1, 1, 8, 30, 15, tzinfo=UTC)
-        end1 = datetime(2025, 1, 31, 14, 45, 22, tzinfo=UTC)
+        start1 = datetime(2025, 1, 1, 8, 30, 15, tzinfo=timezone.utc)
+        end1 = datetime(2025, 1, 31, 14, 45, 22, tzinfo=timezone.utc)
         morning_range = DateRange(start_date=start1, end_date=end1)
 
-        start2 = datetime(2025, 1, 1, 16, 20, 55, tzinfo=UTC)
-        end2 = datetime(2025, 1, 31, 9, 12, 8, tzinfo=UTC)
+        start2 = datetime(2025, 1, 1, 16, 20, 55, tzinfo=timezone.utc)
+        end2 = datetime(2025, 1, 31, 9, 12, 8, tzinfo=timezone.utc)
         evening_range = DateRange(start_date=start2, end_date=end2)
 
         result1 = cached_function(morning_range)
@@ -309,8 +311,8 @@ class TestCacheIntegration:
     def test_daterange_normalization(self):
         """Test that DateRange normalizes times for consistent caching."""
         # Test start date normalization to 00:00:00
-        start_with_time = datetime(2025, 1, 1, 15, 30, 45, tzinfo=UTC)
-        end_with_time = datetime(2025, 1, 31, 8, 15, 30, tzinfo=UTC)
+        start_with_time = datetime(2025, 1, 1, 15, 30, 45, tzinfo=timezone.utc)
+        end_with_time = datetime(2025, 1, 31, 8, 15, 30, tzinfo=timezone.utc)
         time_specific_range = DateRange(
             start_date=start_with_time, end_date=end_with_time
         )
@@ -334,12 +336,12 @@ class TestCacheIntegration:
     def test_daterange_hash_consistency_across_times(self):
         """Test that DateRange objects with same dates but different times have same hash."""
         # Same dates, different times
-        start1 = datetime(2025, 1, 1, 2, 30, tzinfo=UTC)
-        end1 = datetime(2025, 1, 31, 18, 45, tzinfo=UTC)
+        start1 = datetime(2025, 1, 1, 2, 30, tzinfo=timezone.utc)
+        end1 = datetime(2025, 1, 31, 18, 45, tzinfo=timezone.utc)
         early_range = DateRange(start_date=start1, end_date=end1)
 
-        start2 = datetime(2025, 1, 1, 22, 15, tzinfo=UTC)
-        end2 = datetime(2025, 1, 31, 6, 20, tzinfo=UTC)
+        start2 = datetime(2025, 1, 1, 22, 15, tzinfo=timezone.utc)
+        end2 = datetime(2025, 1, 31, 6, 20, tzinfo=timezone.utc)
         late_range = DateRange(start_date=start2, end_date=end2)
 
         # Should have same hash despite different input times
